@@ -1,0 +1,27 @@
+{
+    "name": "twitch-bot",
+    "version": "1.0.0",
+    "scripts": {
+        "prepare": "husky install",
+        "prettier:check": "prettier  --check .",
+        "prettier:write": "prettier --write ."
+    },
+    "engines": {
+        "node": ">=18",
+        "npm": ">=9"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ivanesik/twitch-bot.git"
+    },
+    "author": "Ivan Eleskin",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/ivanesik/twitch-bot/issues"
+    },
+    "homepage": "https://github.com/ivanesik/twitch-bot#readme",
+    "devDependencies": {
+        "husky": "8.0.3",
+        "prettier": "2.8.4"
+    }
+}
