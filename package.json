@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "ts-node src/index.ts",
+        "dev": "env-cmd -f .env.dev ts-node src/index.ts",
         "prepare": "husky install",
         "prettier:check": "prettier  --check .",
         "prettier:write": "prettier --write ."
@@ -24,6 +24,7 @@
     "homepage": "https://github.com/ivanesik/twitch-bot#readme",
     "devDependencies": {
         "@types/node": "18.14.1",
+        "@types/ws": "8.5.4",
         "husky": "8.0.3",
         "prettier": "2.8.4",
         "ts-node": "10.9.1",
@@ -31,7 +32,8 @@
     },
     "dependencies": {
         "chalk": "5.2.0",
-        "socket.io": "4.6.1",
-        "socket.io-client": "4.6.1"
+        "env-cmd": "10.1.0",
+        "node-fetch": "3.3.0",
+        "ws": "8.12.1"
     }
 }
