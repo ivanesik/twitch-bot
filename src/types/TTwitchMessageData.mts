@@ -18,6 +18,19 @@ interface IResponseMessageData {
     data: undefined;
 }
 
+/**
+ * Clients may receive a RECONNECT message at any time. This indicates that the server is about to
+ * restart (typically for maintenance) and will disconnect the client within 30 seconds. During this
+ * time, we recommend that clients reconnect to the server; otherwise, the client will be forcibly
+ * disconnected.
+ */
+interface IReconnectMessageData {
+    type: 'RECONNECT';
+    error: undefined;
+    nonce: undefined;
+    data: undefined;
+}
+
 export interface IRewardData {
     type: 'reward-redeemed';
     data: {
@@ -102,5 +115,6 @@ type TErrorMessageData = IBadAuthErrorMessageData | IUnknownErrorMessageData;
 export type TTwitchMessageData =
     | IPongMessageData
     | IResponseMessageData
+    | IReconnectMessageData
     | IRewardRedeemedMessageData
     | TErrorMessageData;

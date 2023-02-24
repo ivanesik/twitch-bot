@@ -21,15 +21,18 @@ export class TwitchSocketClient {
     private heartbeatHandle?: NodeJS.Timer;
 
     constructor(private userId: string, private accessToken: string, private clientId: string) {
-        Logger.info('Start websocket');
+        this.websocket = this.start();
+    }
 
-        this.websocket = new WebSocket(TWITCH_PUBSUB_URL);
-        this.websocket.onopen = this.onOpen.bind(this);
-        this.websocket.onclose = this.onClose.bind(this);
-        this.websocket.onerror = this.onError.bind(this);
-        this.websocket.onmessage = this.onMessage.bind(this);
+    @logAction('Start websocket')
+    private start(): WebSocket {
+        const websocket = new WebSocket(TWITCH_PUBSUB_URL);
+        websocket.onopen = this.onOpen.bind(this);
+        websocket.onclose = this.onClose.bind(this);
+        websocket.onerror = this.onError.bind(this);
+        websocket.onmessage = this.onMessage.bind(this);
 
-        Logger.success('Start websocket');
+        return websocket;
     }
 
     @logAction('Stop websocket')
@@ -108,6 +111,11 @@ export class TwitchSocketClient {
             }
 
             return;
+        }
+
+        if (data.type === 'RECONNECT') {
+            this.stop();
+            this.start();
         }
 
         const rewardData: IRewardData = data.data?.message && JSON.parse(data.data.message);
