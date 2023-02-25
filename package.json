@@ -3,7 +3,9 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "env-cmd -f .env.dev ts-node src/index.ts",
+        "dev": "env-cmd -f .env.dev ts-node src/index.mts",
+        "build": "rollup --config",
+        "start": "env-cmd -f .env.dev node ./bundle.mjs",
         "prepare": "husky install",
         "prettier:check": "prettier  --check .",
         "prettier:write": "prettier --write ."
@@ -23,11 +25,14 @@
     },
     "homepage": "https://github.com/ivanesik/twitch-bot#readme",
     "devDependencies": {
+        "@rollup/plugin-typescript": "11.0.0",
         "@types/node": "18.14.1",
         "@types/ws": "8.5.4",
         "husky": "8.0.3",
         "prettier": "2.8.4",
+        "rollup": "3.17.2",
         "ts-node": "10.9.1",
+        "tslib": "2.5.0",
         "typescript": "4.9.5"
     },
     "dependencies": {
