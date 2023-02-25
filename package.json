@@ -5,7 +5,7 @@
     "scripts": {
         "dev": "env-cmd -f .env.dev ts-node src/index.mts",
         "build": "rollup --config",
-        "start": "env-cmd -f .env.dev node ./bundle.mjs",
+        "start": "env-cmd -f .env node ./bundle.mjs",
         "prepare": "husky install",
         "prettier:check": "prettier  --check .",
         "prettier:write": "prettier --write ."
