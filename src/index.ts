@@ -1,8 +1,12 @@
+import path from 'path';
 import chalk from 'chalk';
+import {fileURLToPath} from 'url';
+
+import {Logger} from './logger/logger.mjs';
 
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
-import {Logger} from './logger/logger.mjs';
+import {FileWriter} from './file/FileWriter.mjs';
 
 Logger.success(chalk.green('Application started\n'));
 

@@ -5,11 +5,12 @@ import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
 import {IRewardData, TTwitchMessageData} from '../types/TTwitchMessageData.mjs';
 
+import {FileWriter} from '../file/FileWriter.mjs';
 import {builtTwitchAccessUrl} from '../utilities/builtTwitchAccessUrl.mjs';
 
 import {Logger} from '../logger/logger.mjs';
-import {logHandler} from '../logger/logHandler.mjs';
 import {logAction} from '../logger/logMethod.mjs';
+import {logHandler} from '../logger/logHandler.mjs';
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({
@@ -94,6 +95,8 @@ export class TwitchSocketClient {
             return;
         }
 
+        Logger.info(`Handle: receive "${data.type}"`);
+
         if (data.error) {
             switch (data.error) {
                 case 'ERR_BADAUTH': {
@@ -123,7 +126,13 @@ export class TwitchSocketClient {
         if (rewardData) {
             switch (rewardData.type) {
                 case 'reward-redeemed': {
-                    // TODO: do something
+                    const fileWriter = new FileWriter();
+
+                    fileWriter.write(
+                        'rewardUsers',
+                        `${rewardData.data.redemption.reward.id}.txt`,
+                        rewardData.data.redemption.user.login,
+                    );
                 }
             }
         }
