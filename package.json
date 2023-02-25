@@ -6,9 +6,10 @@
         "dev": "env-cmd -f .env.dev ts-node src/index.mts",
         "build": "rollup --config",
         "start": "env-cmd -f .env node ./bundle.mjs",
-        "prepare": "husky install",
+        "lint": "eslint ./",
         "prettier:check": "prettier  --check .",
-        "prettier:write": "prettier --write ."
+        "prettier:write": "prettier --write .",
+        "prepare": "husky install"
     },
     "engines": {
         "node": ">=18",
@@ -28,6 +29,10 @@
         "@rollup/plugin-typescript": "11.0.0",
         "@types/node": "18.14.1",
         "@types/ws": "8.5.4",
+        "@typescript-eslint/eslint-plugin": "5.53.0",
+        "@typescript-eslint/parser": "5.53.0",
+        "eslint": "8.34.0",
+        "eslint-config-prettier": "8.6.0",
         "husky": "8.0.3",
         "prettier": "2.8.4",
         "rollup": "3.17.2",
@@ -38,7 +43,6 @@
     "dependencies": {
         "chalk": "5.2.0",
         "env-cmd": "10.1.0",
-        "node-fetch": "3.3.0",
         "ws": "8.12.1"
     }
 }

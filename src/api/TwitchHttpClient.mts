@@ -1,4 +1,3 @@
-import {HeadersInit} from 'node-fetch';
 import {logAction} from '../logger/logMethod.mjs';
 
 interface IGetTokenResponse {
