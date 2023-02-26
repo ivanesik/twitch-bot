@@ -54,7 +54,7 @@ export class TwitchSocketClient {
         this.websocket.send(subscriptionData);
     }
 
-    @logAction('Send PING')
+    @logAction('Send "PING"')
     private sendPing(): void {
         Logger.info('Send PING message');
         this.websocket.send(PING_MESSAGE);
@@ -95,7 +95,7 @@ export class TwitchSocketClient {
             return;
         }
 
-        Logger.info(`Handle: receive "${data.type}"`);
+        Logger.info(`Handle: Received message type - "${data.type}"`);
 
         if (data.error) {
             switch (data.error) {
@@ -127,6 +127,10 @@ export class TwitchSocketClient {
             switch (rewardData.type) {
                 case 'reward-redeemed': {
                     const fileWriter = new FileWriter();
+
+                    Logger.info(
+                        `Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`,
+                    );
 
                     fileWriter.write(
                         'rewardUsers',

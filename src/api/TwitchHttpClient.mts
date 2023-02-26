@@ -1,11 +1,5 @@
 import {logAction} from '../logger/logMethod.mjs';
 
-interface IGetTokenResponse {
-    access_token: string;
-    expires_in: number;
-    token_type: 'bearer';
-}
-
 interface IGetUsersResponse {
     data: [
         {
@@ -24,27 +18,20 @@ interface IGetUsersResponse {
 }
 
 export class TwitchHttpClient {
-    constructor(private clientId: string, private clientSecret: string) {}
+    constructor(private clientId: string) {}
 
-    @logAction('Getting access token')
-    async getAccessToken(): Promise<string> {
-        const response = await fetch('https://id.twitch.tv/oauth2/token', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                client_id: this.clientId,
-                client_secret: this.clientSecret,
-                grant_type: 'client_credentials',
-            }),
+    @logAction('Validate access token')
+    async validateAccessToken(accessToken: string): Promise<boolean> {
+        const response = await fetch('https://id.twitch.tv/oauth2/validate', {
+            method: 'GET',
+            headers: {Authorization: `OAuth ${accessToken}`},
         });
 
-        if (!response) {
-            return '';
+        if (response.status === 200) {
+            return true;
+        } else {
+            return false;
         }
-
-        const {access_token} = (await response.json()) as IGetTokenResponse;
-
-        return access_token;
     }
 
     @logAction('Getting user id by login')

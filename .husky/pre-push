@@ -3,3 +3,4 @@
 
 pnpm run prettier:check
 pnpm run lint
+pnpm run build

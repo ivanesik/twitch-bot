@@ -553,26 +553,20 @@ function logAction(eventName, options) {
 
 class TwitchHttpClient {
     clientId;
-    clientSecret;
-    constructor(clientId, clientSecret) {
+    constructor(clientId) {
         this.clientId = clientId;
-        this.clientSecret = clientSecret;
     }
-    async getAccessToken() {
-        const response = await fetch('https://id.twitch.tv/oauth2/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                client_id: this.clientId,
-                client_secret: this.clientSecret,
-                grant_type: 'client_credentials',
-            }),
+    async validateAccessToken(accessToken) {
+        const response = await fetch('https://id.twitch.tv/oauth2/validate', {
+            method: 'GET',
+            headers: { Authorization: `OAuth ${accessToken}` },
         });
-        if (!response) {
-            return '';
+        if (response.status === 200) {
+            return true;
         }
-        const { access_token } = (await response.json());
-        return access_token;
+        else {
+            return false;
+        }
     }
     async getUserIdByLogin(login, accessToken) {
         const response = await fetch(`https://api.twitch.tv/helix/users?login=${login}`, {
@@ -587,11 +581,11 @@ class TwitchHttpClient {
     }
 }
 __decorate([
-    logAction('Getting access token'),
+    logAction('Validate access token'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], TwitchHttpClient.prototype, "getAccessToken", null);
+], TwitchHttpClient.prototype, "validateAccessToken", null);
 __decorate([
     logAction('Getting user id by login'),
     __metadata("design:type", Function),
@@ -717,7 +711,7 @@ class TwitchSocketClient {
             Logger.error('No data in message');
             return;
         }
-        Logger.info(`Handle: receive "${data.type}"`);
+        Logger.info(`Handle: Received message type - "${data.type}"`);
         if (data.error) {
             switch (data.error) {
                 case 'ERR_BADAUTH': {
@@ -741,6 +735,7 @@ class TwitchSocketClient {
             switch (rewardData.type) {
                 case 'reward-redeemed': {
                     const fileWriter = new FileWriter();
+                    Logger.info(`Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`);
                     fileWriter.write('rewardUsers', `${rewardData.data.redemption.reward.id}.txt`, rewardData.data.redemption.user.login);
                 }
             }
@@ -766,7 +761,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], TwitchSocketClient.prototype, "subscribe", null);
 __decorate([
-    logAction('Send PING'),
+    logAction('Send "PING"'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
@@ -798,23 +793,24 @@ __decorate([
 
 Logger.success(chalk.green('Application started\n'));
 const clientId = process.env.CLIENT_ID;
-const clientSecret = process.env.CLIENT_SECRET;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;
 if (!clientId) {
     throw Error('No CLIENT_ID found. Please pass it into $CLIENT_ID');
 }
-if (!clientSecret) {
-    throw Error('No CLIENT_SECRET found. Please pass it into $CLIENT_SECRET');
-}
 if (!clientAccessToken) {
     throw Error('No CLIENT_ACCESS_TOKEN found. Please pass it into $CLIENT_ACCESS_TOKEN');
 }
-const twitchClient = new TwitchHttpClient(clientId, clientSecret);
-const rootAccessToken = await twitchClient.getAccessToken();
-const userId = await twitchClient.getUserIdByLogin('viktorysa', rootAccessToken);
-const app = new TwitchSocketClient(userId, clientAccessToken, clientId);
-process.on('SIGINT', function () {
-    Logger.info('Stop application');
-    app.stop();
-    process.exit();
-});
+const twitchClient = new TwitchHttpClient(clientId);
+const userId = await twitchClient.getUserIdByLogin('viktorysa', clientAccessToken);
+const isAccessTokenValid = await twitchClient.validateAccessToken(clientAccessToken);
+if (isAccessTokenValid) {
+    const app = new TwitchSocketClient(userId, clientAccessToken, clientId);
+    process.on('SIGINT', function () {
+        Logger.info('Stop application');
+        app.stop();
+        process.exit();
+    });
+}
+else {
+    Logger.error("Access token isn't valid");
+}
