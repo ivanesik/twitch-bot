@@ -2,11 +2,7 @@ import {Logger} from './logger.mjs';
 import {buildErrorFromUnknown} from '../utilities/buildErrorFromUnknown.mjs';
 
 export function logAction(eventName: string, options?: {onlyStart?: boolean; withArgs?: boolean}) {
-    return function (
-        target: unknown,
-        propertyKey: string | symbol,
-        descriptor: PropertyDescriptor,
-    ): void {
+    return function (_: unknown, __: string | symbol, descriptor: PropertyDescriptor): void {
         const originalFn = descriptor.value;
 
         if (typeof originalFn !== 'function') {

@@ -1,11 +1,9 @@
-import chalk from 'chalk';
-
 import {Logger} from './logger/logger.mjs';
 
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
 
-Logger.success(chalk.green('Application started\n'));
+Logger.success('Application started\n');
 
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;

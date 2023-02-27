@@ -1,11 +1,7 @@
 import {Logger} from './logger.mjs';
 
 export function logHandler(eventName: string) {
-    return function (
-        target: unknown,
-        propertyKey: string | symbol,
-        descriptor: PropertyDescriptor,
-    ): void {
+    return function (_: unknown, __: string | symbol, descriptor: PropertyDescriptor): void {
         const originalFn = descriptor.value;
 
         if (typeof originalFn !== 'function') {
