@@ -700,7 +700,6 @@ class TwitchSocketClient {
     }
     onClose(event) {
         Logger.error('Socket closed by reason: ' + event.reason);
-        console.log(event);
         clearInterval(this.heartbeatHandle);
     }
     onMessage(event) {
@@ -736,7 +735,7 @@ class TwitchSocketClient {
                 case 'reward-redeemed': {
                     const fileWriter = new FileWriter();
                     Logger.info(`Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`);
-                    fileWriter.write('rewardUsers', `${rewardData.data.redemption.reward.id}.txt`, rewardData.data.redemption.user.login);
+                    fileWriter.write('rewardUsers', `${rewardData.data.redemption.reward.id}.txt`, rewardData.data.redemption.user.display_name);
                 }
             }
         }

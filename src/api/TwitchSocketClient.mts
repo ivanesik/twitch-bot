@@ -79,7 +79,6 @@ export class TwitchSocketClient {
     @logHandler('Socket disconnect')
     private onClose(event: CloseEvent): void {
         Logger.error('Socket closed by reason: ' + event.reason);
-        console.log(event);
         clearInterval(this.heartbeatHandle);
     }
 
@@ -135,7 +134,7 @@ export class TwitchSocketClient {
                     fileWriter.write(
                         'rewardUsers',
                         `${rewardData.data.redemption.reward.id}.txt`,
-                        rewardData.data.redemption.user.login,
+                        rewardData.data.redemption.user.display_name,
                     );
                 }
             }
