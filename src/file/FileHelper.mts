@@ -4,7 +4,7 @@ import path from 'path';
 import {Logger} from '../logger/logger.mjs';
 import {logAction} from '../logger/logMethod.mjs';
 
-export class FileWriter {
+export class FileHelper {
     @logAction('Write file', {withArgs: true})
     public write(directoryName: string, fileName: string, value: string) {
         const filePath = path.join(directoryName, fileName);
@@ -19,5 +19,18 @@ export class FileWriter {
         }
 
         fs.writeFileSync(filePath, value);
+    }
+
+    @logAction('Read json file')
+    public readJsonFile<T>(directoryName: string, fileName: string): T | undefined {
+        const filePath = path.join(directoryName, fileName);
+
+        if (!fs.existsSync(filePath)) {
+            Logger.info(`File "${fileName}" doesn't exists.`);
+
+            return undefined;
+        }
+
+        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
     }
 }

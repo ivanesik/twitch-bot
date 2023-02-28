@@ -1,4 +1,4 @@
-export interface IRewardImage {
+export interface ITwitchRewardImage {
     url_1x: string;
     url_2x: string;
     url_4x: string;

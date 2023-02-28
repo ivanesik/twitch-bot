@@ -1,17 +1,22 @@
 import {Logger} from './logger.mjs';
+import {buildErrorFromUnknown} from '../utilities/buildErrorFromUnknown.mjs';
 
 export function logHandler(eventName: string) {
     return function (_: unknown, __: string | symbol, descriptor: PropertyDescriptor): void {
         const originalFn = descriptor.value;
 
         if (typeof originalFn !== 'function') {
-            throw new TypeError('logAction can only decorate functions');
+            throw new TypeError('logHandle can only decorate functions');
         }
 
         descriptor.value = function (...args: unknown[]): void | Promise<void> {
-            Logger.info(`Handle: ${eventName}`);
+            try {
+                Logger.info(`Handler: ${eventName}`);
 
-            return originalFn.call(this, ...args);
+                return originalFn.call(this, ...args);
+            } catch (err) {
+                Logger.error(`Handler error: ${eventName}`, buildErrorFromUnknown(err));
+            }
         };
     };
 }

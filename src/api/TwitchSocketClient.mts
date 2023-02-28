@@ -3,14 +3,16 @@ import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
+import type {IRewardRatingsInfo} from '../types/IRewardRatingsInfo.js';
 import type {IRewardData, TTwitchMessageData} from '../types/TTwitchMessageData.mjs';
 
-import {FileWriter} from '../file/FileWriter.mjs';
+import {FileHelper} from '../file/FileHelper.mjs';
 import {builtTwitchAccessUrl} from '../utilities/builtTwitchAccessUrl.mjs';
 
 import {Logger} from '../logger/logger.mjs';
 import {logAction} from '../logger/logMethod.mjs';
 import {logHandler} from '../logger/logHandler.mjs';
+import {updateRewardRating} from '../utilities/updateRewardRating.js';
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({
@@ -146,17 +148,46 @@ export class TwitchSocketClient {
                 if (rewardData) {
                     switch (rewardData.type) {
                         case 'reward-redeemed': {
-                            const fileWriter = new FileWriter();
-
                             Logger.info(
                                 `Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`,
                             );
 
-                            fileWriter.write(
-                                'rewardUsers',
-                                `${rewardData.data.redemption.reward.id}.txt`,
-                                rewardData.data.redemption.user.display_name,
-                            );
+                            const fileHelper = new FileHelper();
+
+                            try {
+                                fileHelper.write(
+                                    'rewardUsers',
+                                    `${rewardData.data.redemption.reward.id}.txt`,
+                                    rewardData.data.redemption.user.display_name,
+                                );
+                            } catch (err) {
+                                Logger.error(
+                                    `Handle: Error while write reward ${rewardData.data.redemption.reward.title} for ${rewardData.data.redemption.user.display_name}`,
+                                );
+                            }
+
+                            try {
+                                const rewardRatingsDirectory = 'rewardRatings';
+                                const rewardRatingFileName = `${rewardData.data.redemption.reward.id}.json`;
+
+                                const rewardRatings: IRewardRatingsInfo =
+                                    fileHelper.readJsonFile(
+                                        rewardRatingsDirectory,
+                                        rewardRatingFileName,
+                                    ) || {};
+
+                                updateRewardRating(rewardData.data.redemption, rewardRatings);
+
+                                fileHelper.write(
+                                    rewardRatingsDirectory,
+                                    rewardRatingFileName,
+                                    JSON.stringify(rewardRatings, null, 2),
+                                );
+                            } catch (err) {
+                                Logger.error(
+                                    `Handle: Error while write reward rating ${rewardData.data.redemption.reward.title} for ${rewardData.data.redemption.user.display_name}`,
+                                );
+                            }
                         }
                     }
                 }
