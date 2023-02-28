@@ -3,7 +3,7 @@ import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 import {MINUTE} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
-import {IRewardData, TTwitchMessageData} from '../types/TTwitchMessageData.mjs';
+import type {IRewardData, TTwitchMessageData} from '../types/TTwitchMessageData.mjs';
 
 import {FileWriter} from '../file/FileWriter.mjs';
 import {builtTwitchAccessUrl} from '../utilities/builtTwitchAccessUrl.mjs';

@@ -1,5 +1,5 @@
-import {THexColor} from './common.mjs';
-import {IRewardImage} from './twitchReward.mjs';
+import type {THexColor} from './common.mjs';
+import type {IRewardImage} from './twitchReward.mjs';
 
 /** @example '2023-02-24T21:33:07.704059988Z' */
 type TDateLikeType = string;

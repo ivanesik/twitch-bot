@@ -1,14 +1,18 @@
 import {createLogger, transports, format} from 'winston';
-import {ErrorEvent} from 'ws';
+import DailyRotateFile from 'winston-daily-rotate-file';
+import type {ErrorEvent} from 'ws';
 
 const logger = createLogger({
     transports: [
         new transports.Console({
             format: format.combine(format.simple(), format.colorize({all: true})),
         }),
-        new transports.File({
-            filename: 'logs/app.log',
-            format: format.combine(format.timestamp(), format.json()),
+        new DailyRotateFile({
+            filename: 'logs/app-%DATE%.log',
+            datePattern: 'YYYY-MM-DD-HH',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '20d',
         }),
     ],
 });

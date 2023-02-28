@@ -1,4 +1,5 @@
 import { createLogger, transports, format } from 'winston';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import WebSocket from 'ws';
 import fs from 'fs';
 import path from 'path';
@@ -8,9 +9,12 @@ const logger = createLogger({
         new transports.Console({
             format: format.combine(format.simple(), format.colorize({ all: true })),
         }),
-        new transports.File({
-            filename: 'logs/app.log',
-            format: format.combine(format.timestamp(), format.json()),
+        new DailyRotateFile({
+            filename: 'logs/app-%DATE%.log',
+            datePattern: 'YYYY-MM-DD-HH',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '20d',
         }),
     ],
 });
