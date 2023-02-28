@@ -90,7 +90,7 @@ export interface IRewardData {
 interface IRewardRedeemedMessageData {
     type: 'MESSAGE';
     error: undefined;
-    data: {
+    data?: {
         topic: 'channel-points-channel-v1.424342489';
         message: string;
     };

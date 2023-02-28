@@ -1,6 +1,6 @@
 import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
-import {MINUTE} from '../constants/timers.mjs';
+import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
 import type {IRewardData, TTwitchMessageData} from '../types/TTwitchMessageData.mjs';
@@ -19,7 +19,8 @@ const PING_MESSAGE = JSON.stringify({
 
 export class TwitchSocketClient {
     private websocket: WebSocket;
-    private heartbeatHandle?: NodeJS.Timer;
+    private heartbeatTimer?: NodeJS.Timer;
+    private pingTimeountTimer?: NodeJS.Timer;
 
     constructor(private userId: string, private accessToken: string, private clientId: string) {
         this.websocket = this.start();
@@ -36,13 +37,21 @@ export class TwitchSocketClient {
         return websocket;
     }
 
+    @logAction('Reconnect')
+    private reconnect(): void {
+        this.stop();
+        this.start();
+    }
+
     @logAction('Stop websocket')
     public stop(): void {
-        this.websocket.close();
+        clearInterval(this.heartbeatTimer);
+        clearTimeout(this.pingTimeountTimer);
+        this.websocket.terminate();
     }
 
     @logAction('Subscribe', {onlyStart: true, withArgs: true})
-    public subscribe(subscriptionName: string): void {
+    private subscribe(subscriptionName: string): void {
         const subscriptionData = JSON.stringify({
             type: 'LISTEN',
             data: {
@@ -58,28 +67,34 @@ export class TwitchSocketClient {
     private sendPing(): void {
         Logger.info('Send PING message');
         this.websocket.send(PING_MESSAGE);
+
+        this.pingTimeountTimer = setTimeout(() => {
+            this.reconnect();
+        }, 10 * SECOND);
     }
 
     @logHandler('Socket open')
     private onOpen(): void {
         this.sendPing();
-        this.heartbeatHandle = setInterval(() => {
+        this.heartbeatTimer = setInterval(() => {
             this.sendPing();
-        }, 4 * MINUTE);
+        }, 1 * MINUTE);
 
         this.subscribe(PUB_SUB_EVENTS.channelPoints(this.userId));
     }
 
     @logHandler('Socket error')
     private onError(error: ErrorEvent): void {
-        Logger.error('Socket Error', error);
-        clearInterval(this.heartbeatHandle);
+        Logger.error('Socket errored with data:', error);
+        this.reconnect();
     }
 
     @logHandler('Socket disconnect')
     private onClose(event: CloseEvent): void {
-        Logger.error('Socket closed by reason: ' + event.reason);
-        clearInterval(this.heartbeatHandle);
+        Logger.error(
+            `Socket closed with code ${event.code} by reason: ${event.reason || 'UNKNOWN'}`,
+        );
+        clearInterval(this.heartbeatTimer);
     }
 
     @logHandler('Socket receive message')
@@ -115,27 +130,35 @@ export class TwitchSocketClient {
             return;
         }
 
-        if (data.type === 'RECONNECT') {
-            this.stop();
-            this.start();
-        }
+        switch (data.type) {
+            case 'RECONNECT': {
+                this.reconnect();
+                break;
+            }
+            case 'PONG': {
+                clearTimeout(this.pingTimeountTimer);
+                break;
+            }
+            case 'MESSAGE': {
+                const rewardData: undefined | IRewardData =
+                    data.data?.message && JSON.parse(data.data.message);
 
-        const rewardData: IRewardData = data.data?.message && JSON.parse(data.data.message);
+                if (rewardData) {
+                    switch (rewardData.type) {
+                        case 'reward-redeemed': {
+                            const fileWriter = new FileWriter();
 
-        if (rewardData) {
-            switch (rewardData.type) {
-                case 'reward-redeemed': {
-                    const fileWriter = new FileWriter();
+                            Logger.info(
+                                `Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`,
+                            );
 
-                    Logger.info(
-                        `Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`,
-                    );
-
-                    fileWriter.write(
-                        'rewardUsers',
-                        `${rewardData.data.redemption.reward.id}.txt`,
-                        rewardData.data.redemption.user.display_name,
-                    );
+                            fileWriter.write(
+                                'rewardUsers',
+                                `${rewardData.data.redemption.reward.id}.txt`,
+                                rewardData.data.redemption.user.display_name,
+                            );
+                        }
+                    }
                 }
             }
         }

@@ -194,7 +194,8 @@ class TwitchSocketClient {
     accessToken;
     clientId;
     websocket;
-    heartbeatHandle;
+    heartbeatTimer;
+    pingTimeountTimer;
     constructor(userId, accessToken, clientId) {
         this.userId = userId;
         this.accessToken = accessToken;
@@ -209,8 +210,14 @@ class TwitchSocketClient {
         websocket.onmessage = this.onMessage.bind(this);
         return websocket;
     }
+    reconnect() {
+        this.stop();
+        this.start();
+    }
     stop() {
-        this.websocket.close();
+        clearInterval(this.heartbeatTimer);
+        clearTimeout(this.pingTimeountTimer);
+        this.websocket.terminate();
     }
     subscribe(subscriptionName) {
         const subscriptionData = JSON.stringify({
@@ -225,21 +232,24 @@ class TwitchSocketClient {
     sendPing() {
         Logger.info('Send PING message');
         this.websocket.send(PING_MESSAGE);
+        this.pingTimeountTimer = setTimeout(() => {
+            this.reconnect();
+        }, 10 * SECOND);
     }
     onOpen() {
         this.sendPing();
-        this.heartbeatHandle = setInterval(() => {
+        this.heartbeatTimer = setInterval(() => {
             this.sendPing();
-        }, 4 * MINUTE);
+        }, 1 * MINUTE);
         this.subscribe(PUB_SUB_EVENTS.channelPoints(this.userId));
     }
     onError(error) {
-        Logger.error('Socket Error', error);
-        clearInterval(this.heartbeatHandle);
+        Logger.error('Socket errored with data:', error);
+        this.reconnect();
     }
     onClose(event) {
-        Logger.error('Socket closed by reason: ' + event.reason);
-        clearInterval(this.heartbeatHandle);
+        Logger.error(`Socket closed with code ${event.code} by reason: ${event.reason || 'UNKNOWN'}`);
+        clearInterval(this.heartbeatTimer);
     }
     onMessage(event) {
         const data = typeof event.data === 'string'
@@ -264,17 +274,25 @@ class TwitchSocketClient {
             }
             return;
         }
-        if (data.type === 'RECONNECT') {
-            this.stop();
-            this.start();
-        }
-        const rewardData = data.data?.message && JSON.parse(data.data.message);
-        if (rewardData) {
-            switch (rewardData.type) {
-                case 'reward-redeemed': {
-                    const fileWriter = new FileWriter();
-                    Logger.info(`Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`);
-                    fileWriter.write('rewardUsers', `${rewardData.data.redemption.reward.id}.txt`, rewardData.data.redemption.user.display_name);
+        switch (data.type) {
+            case 'RECONNECT': {
+                this.reconnect();
+                break;
+            }
+            case 'PONG': {
+                clearTimeout(this.pingTimeountTimer);
+                break;
+            }
+            case 'MESSAGE': {
+                const rewardData = data.data?.message && JSON.parse(data.data.message);
+                if (rewardData) {
+                    switch (rewardData.type) {
+                        case 'reward-redeemed': {
+                            const fileWriter = new FileWriter();
+                            Logger.info(`Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`);
+                            fileWriter.write('rewardUsers', `${rewardData.data.redemption.reward.id}.txt`, rewardData.data.redemption.user.display_name);
+                        }
+                    }
                 }
             }
         }
@@ -286,6 +304,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", WebSocket)
 ], TwitchSocketClient.prototype, "start", null);
+__decorate([
+    logAction('Reconnect'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], TwitchSocketClient.prototype, "reconnect", null);
 __decorate([
     logAction('Stop websocket'),
     __metadata("design:type", Function),
