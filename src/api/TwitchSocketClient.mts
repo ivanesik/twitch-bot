@@ -219,7 +219,7 @@ export class TwitchSocketClient {
                                     const preparedUsers = Object.values(rewardRatings)
                                         .sort(
                                             (leftUser, rightUser) =>
-                                                leftUser.amount - rightUser.amount,
+                                                rightUser.amount - leftUser.amount,
                                         )
                                         .slice(0, 10);
 

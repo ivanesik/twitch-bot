@@ -18617,7 +18617,7 @@ class TwitchSocketClient {
                                 if (templates?.[rewardId]) {
                                     const templator = lodash.template(templates[rewardId]);
                                     const preparedUsers = Object.values(rewardRatings)
-                                        .sort((leftUser, rightUser) => leftUser.amount - rightUser.amount)
+                                        .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
                                         .slice(0, 10);
                                     fileHelper.write(rewardRatingsDirectory, `${rewardId}.txt`, templator({ users: preparedUsers }));
                                 }
