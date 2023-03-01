@@ -1,3 +1,4 @@
+import {template} from 'lodash-es';
 import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
 import {MINUTE, SECOND} from '../constants/timers.mjs';
@@ -13,6 +14,8 @@ import {Logger} from '../logger/logger.mjs';
 import {logAction} from '../logger/logMethod.mjs';
 import {logHandler} from '../logger/logHandler.mjs';
 import {updateRewardRating} from '../utilities/updateRewardRating.js';
+import type {IRewardTemplateInfo} from '../types/IRewardTemplateInfo.js';
+import {buildErrorFromUnknown} from '../utilities/buildErrorFromUnknown.mjs';
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({
@@ -146,30 +149,38 @@ export class TwitchSocketClient {
                     data.data?.message && JSON.parse(data.data.message);
 
                 if (rewardData) {
+                    const rewardUser = rewardData.data.redemption.user;
+                    const reward = rewardData.data.redemption.reward;
+                    const rewardId = reward.id;
+
+                    const rewardRatingFileName = `${rewardId}.json`;
+
                     switch (rewardData.type) {
                         case 'reward-redeemed': {
                             Logger.info(
-                                `Handle: receive reward "${rewardData.data.redemption.reward.title}" from ${rewardData.data.redemption.user.display_name}`,
+                                `Handle: receive reward "${reward.title}" from ${rewardUser.display_name}`,
                             );
 
                             const fileHelper = new FileHelper();
+                            const rewardUsersDirectory = 'rewardUsers';
+                            const rewardRatingsDirectory = 'rewardRatings';
 
+                            /* Write last rewarded UserName */
                             try {
                                 fileHelper.write(
-                                    'rewardUsers',
-                                    `${rewardData.data.redemption.reward.id}.txt`,
-                                    rewardData.data.redemption.user.display_name,
+                                    rewardUsersDirectory,
+                                    `${rewardId}.txt`,
+                                    rewardUser.display_name,
                                 );
                             } catch (err) {
                                 Logger.error(
-                                    `Handle: Error while write reward ${rewardData.data.redemption.reward.title} for ${rewardData.data.redemption.user.display_name}`,
+                                    `Handle: Error while write reward ${reward.title} for ${rewardUser.display_name}`,
+                                    buildErrorFromUnknown(err),
                                 );
                             }
 
+                            /* Write reward rating in JSON */
                             try {
-                                const rewardRatingsDirectory = 'rewardRatings';
-                                const rewardRatingFileName = `${rewardData.data.redemption.reward.id}.json`;
-
                                 const rewardRatings: IRewardRatingsInfo =
                                     fileHelper.readJsonFile(
                                         rewardRatingsDirectory,
@@ -185,7 +196,43 @@ export class TwitchSocketClient {
                                 );
                             } catch (err) {
                                 Logger.error(
-                                    `Handle: Error while write reward rating ${rewardData.data.redemption.reward.title} for ${rewardData.data.redemption.user.display_name}`,
+                                    `Handle: Error while write reward rating ${reward.title} for ${rewardUser.display_name}`,
+                                    buildErrorFromUnknown(err),
+                                );
+                            }
+
+                            /* Write reward rating in template string */
+                            try {
+                                const rewardRatings: IRewardRatingsInfo =
+                                    fileHelper.readJsonFile(
+                                        rewardRatingsDirectory,
+                                        rewardRatingFileName,
+                                    ) || {};
+                                const templates: IRewardTemplateInfo | undefined =
+                                    fileHelper.readJsonFile(
+                                        rewardRatingsDirectory,
+                                        'templates.json',
+                                    );
+
+                                if (templates?.[rewardId]) {
+                                    const templator = template(templates[rewardId]);
+                                    const preparedUsers = Object.values(rewardRatings)
+                                        .sort(
+                                            (leftUser, rightUser) =>
+                                                leftUser.amount - rightUser.amount,
+                                        )
+                                        .slice(0, 10);
+
+                                    fileHelper.write(
+                                        rewardRatingsDirectory,
+                                        `${rewardId}.txt`,
+                                        templator({users: preparedUsers}),
+                                    );
+                                }
+                            } catch (err) {
+                                Logger.error(
+                                    `Handle: Error while write template rating info ${reward.title} for ${rewardUser.display_name}`,
+                                    buildErrorFromUnknown(err),
                                 );
                             }
                         }
