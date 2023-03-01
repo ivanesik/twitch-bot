@@ -1,5 +1,6 @@
 import type {THexColor} from './common.mjs';
 import type {ITwitchRewardImage} from './ITwitchRewardImage.mjs';
+import type {ITwitchUser} from './ITwitchUser.js';
 
 /** @example '2023-02-24T21:33:07.704059988Z' */
 type TDateLikeType = string;
@@ -31,53 +32,51 @@ interface IReconnectMessageData {
     data: undefined;
 }
 
+export interface ITwitchReward {
+    id: '3f6701cf-223b-4a78-bf53-3a27d2c3a3e0';
+    channel_id: string;
+    /** @example 'Нелюбимый зритель стрима' */
+    title: string;
+    prompt: string;
+    /** Cost of reward in channel points */
+    cost: number;
+    is_user_input_required: boolean;
+    is_sub_only: boolean;
+    image: ITwitchRewardImage;
+    default_image: ITwitchRewardImage;
+    background_color: THexColor;
+    is_enabled: boolean;
+    is_paused: boolean;
+    is_in_stock: boolean;
+    max_per_stream: {
+        is_enabled: boolean;
+        /** 0 - is unlimited */
+        max_per_stream: number;
+    };
+    should_redemptions_skip_request_queue: boolean;
+    template_id: null;
+    updated_for_indicator_at: TDateLikeType;
+    max_per_user_per_stream: {
+        is_enabled: boolean;
+        /** 0 - is unlimited */
+        max_per_user_per_stream: number;
+    };
+    global_cooldown: {
+        is_enabled: boolean;
+        /** 0 - is unlimited */
+        global_cooldown_seconds: number;
+    };
+    redemptions_redeemed_current_stream: null;
+    cooldown_expires_at: null;
+}
+
 export interface ITwitchRewardRedemption {
     /** @example '7f639c46-3fa2-4431-9d04-4a982315fa9c' */
     id: string;
-    user: {
-        id: string;
-        login: string;
-        display_name: string;
-    };
+    user: ITwitchUser;
     channel_id: string;
     redeemed_at: TDateLikeType;
-    reward: {
-        id: '3f6701cf-223b-4a78-bf53-3a27d2c3a3e0';
-        channel_id: string;
-        /** @example 'Нелюбимый зритель стрима' */
-        title: string;
-        prompt: string;
-        /** Cost of reward in channel points */
-        cost: number;
-        is_user_input_required: boolean;
-        is_sub_only: boolean;
-        image: ITwitchRewardImage;
-        default_image: ITwitchRewardImage;
-        background_color: THexColor;
-        is_enabled: boolean;
-        is_paused: boolean;
-        is_in_stock: boolean;
-        max_per_stream: {
-            is_enabled: boolean;
-            /** 0 - is unlimited */
-            max_per_stream: number;
-        };
-        should_redemptions_skip_request_queue: boolean;
-        template_id: null;
-        updated_for_indicator_at: TDateLikeType;
-        max_per_user_per_stream: {
-            is_enabled: boolean;
-            /** 0 - is unlimited */
-            max_per_user_per_stream: number;
-        };
-        global_cooldown: {
-            is_enabled: boolean;
-            /** 0 - is unlimited */
-            global_cooldown_seconds: number;
-        };
-        redemptions_redeemed_current_stream: null;
-        cooldown_expires_at: null;
-    };
+    reward: ITwitchReward;
     status: 'UNFULFILLED';
 }
 

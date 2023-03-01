@@ -132,6 +132,109 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TwitchHttpClient.prototype, "getUserIdByLogin", null);
 
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+
+const PUB_SUB_EVENTS = {
+    /** A custom reward is redeemed in a channel.  */
+    channelPoints: (userId) => `channel-points-channel-v1.${userId}`,
+};
+
+/** https://dev.twitch.tv/docs/pubsub/#available-topics */
+const APP_REQUIRED_SCOPES = ['channel:read:redemptions'];
+
+function builtTwitchAccessUrl(clientId) {
+    const url = new URL('https://id.twitch.tv/oauth2/authorize');
+    url.searchParams.set('response_type', 'token');
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', 'http://localhost');
+    url.searchParams.set('scope', APP_REQUIRED_SCOPES.join(' '));
+    return url.toString();
+}
+
+function logHandler(eventName) {
+    return function (_, __, descriptor) {
+        const originalFn = descriptor.value;
+        if (typeof originalFn !== 'function') {
+            throw new TypeError('logHandle can only decorate functions');
+        }
+        descriptor.value = function (...args) {
+            try {
+                Logger.info(`Handler: ${eventName}`);
+                return originalFn.call(this, ...args);
+            }
+            catch (err) {
+                Logger.error(`Handler error: ${eventName}`, buildErrorFromUnknown(err));
+            }
+        };
+    };
+}
+
+class FileHelper {
+    static write(directoryName, fileName, value) {
+        const filePath = path.join(directoryName, fileName);
+        if (!fs.existsSync(directoryName)) {
+            Logger.info(`Directory "${directoryName}" doesn't exists. Create directory.`);
+            fs.mkdirSync(directoryName);
+        }
+        if (!fs.existsSync(filePath)) {
+            Logger.info(`File "${fileName}" doesn't exists. Create file.`);
+        }
+        fs.writeFileSync(filePath, value);
+    }
+    static readJsonFile(directoryName, fileName) {
+        const filePath = path.join(directoryName, fileName);
+        if (!fs.existsSync(filePath)) {
+            Logger.info(`File "${fileName}" doesn't exists.`);
+            return undefined;
+        }
+        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+}
+__decorate([
+    logAction('Write file', { withArgs: true }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], FileHelper, "write", null);
+__decorate([
+    logAction('Read json file'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", Object)
+], FileHelper, "readJsonFile", null);
+
+function writeLastRewardedUser(directory, rewardRedemption) {
+    const { user, reward } = rewardRedemption;
+    const rewardId = reward.id;
+    try {
+        FileHelper.write(directory, `${rewardId}.txt`, user.display_name);
+    }
+    catch (err) {
+        Logger.error(`Handle: Error while write reward ${reward.title} for ${user.display_name}`, buildErrorFromUnknown(err));
+    }
+}
+
+function updateRewardRating(rewardRedemption, currentRating) {
+    const { user: { id, display_name: displayName }, } = rewardRedemption;
+    currentRating[id] = {
+        amount: currentRating[id]?.amount ? currentRating[id]?.amount + 1 : 1,
+        displayName,
+    };
+}
+
+function writeRewardRatingJSON(directory, fileName, rewardRedemption) {
+    const { user, reward } = rewardRedemption;
+    try {
+        const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
+        updateRewardRating(rewardRedemption, rewardRatings);
+        FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
+    }
+    catch (err) {
+        Logger.error(`Handle: Error while write reward rating ${reward.title} for ${user.display_name}`, buildErrorFromUnknown(err));
+    }
+}
+
 /** Detect free variable `global` from Node.js. */
 var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
 
@@ -18403,84 +18506,26 @@ if (symIterator) {
   lodash.prototype[symIterator] = seq.toIterator;
 }
 
-const SECOND = 1000;
-const MINUTE = 60 * SECOND;
-
-const PUB_SUB_EVENTS = {
-    /** A custom reward is redeemed in a channel.  */
-    channelPoints: (userId) => `channel-points-channel-v1.${userId}`,
-};
-
-class FileHelper {
-    write(directoryName, fileName, value) {
-        const filePath = path.join(directoryName, fileName);
-        if (!fs.existsSync(directoryName)) {
-            Logger.info(`Directory "${directoryName}" doesn't exists. Create directory.`);
-            fs.mkdirSync(directoryName);
-        }
-        if (!fs.existsSync(filePath)) {
-            Logger.info(`File "${fileName}" doesn't exists. Create file.`);
-        }
-        fs.writeFileSync(filePath, value);
-    }
-    readJsonFile(directoryName, fileName) {
-        const filePath = path.join(directoryName, fileName);
-        if (!fs.existsSync(filePath)) {
-            Logger.info(`File "${fileName}" doesn't exists.`);
-            return undefined;
-        }
-        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    }
-}
-__decorate([
-    logAction('Write file', { withArgs: true }),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
-    __metadata("design:returntype", void 0)
-], FileHelper.prototype, "write", null);
-__decorate([
-    logAction('Read json file'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
-    __metadata("design:returntype", Object)
-], FileHelper.prototype, "readJsonFile", null);
-
-/** https://dev.twitch.tv/docs/pubsub/#available-topics */
-const APP_REQUIRED_SCOPES = ['channel:read:redemptions'];
-
-function builtTwitchAccessUrl(clientId) {
-    const url = new URL('https://id.twitch.tv/oauth2/authorize');
-    url.searchParams.set('response_type', 'token');
-    url.searchParams.set('client_id', clientId);
-    url.searchParams.set('redirect_uri', 'http://localhost');
-    url.searchParams.set('scope', APP_REQUIRED_SCOPES.join(' '));
-    return url.toString();
-}
-
-function logHandler(eventName) {
-    return function (_, __, descriptor) {
-        const originalFn = descriptor.value;
-        if (typeof originalFn !== 'function') {
-            throw new TypeError('logHandle can only decorate functions');
-        }
-        descriptor.value = function (...args) {
-            try {
-                Logger.info(`Handler: ${eventName}`);
-                return originalFn.call(this, ...args);
+function writeRewardRatingInTemplate(directory, ratingJsonFileName, rewardRedemption) {
+    const rewardUser = rewardRedemption.user;
+    const reward = rewardRedemption.reward;
+    const rewardId = reward.id;
+    try {
+        const rewardRatings = FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
+        const templates = FileHelper.readJsonFile(directory, 'templates.json');
+        if (templates?.[rewardId]) {
+            const templator = lodash.template(templates[rewardId]);
+            const preparedUsers = Object.values(rewardRatings)
+                .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
+                .slice(0, 10);
+            if (preparedUsers.length) {
+                FileHelper.write(directory, `${rewardId}.txt`, templator({ users: preparedUsers }));
             }
-            catch (err) {
-                Logger.error(`Handler error: ${eventName}`, buildErrorFromUnknown(err));
-            }
-        };
-    };
-}
-
-function updateRewardRating(rewardRedemption, currentRating) {
-    const { user: { id, display_name: displayName }, } = rewardRedemption;
-    currentRating[id] = {
-        amount: currentRating[id]?.amount ? currentRating[id]?.amount + 1 : 1,
-        displayName,
-    };
+        }
+    }
+    catch (err) {
+        Logger.error(`Handle: Error while write template rating info ${reward.title} for ${rewardUser.display_name}`, buildErrorFromUnknown(err));
+    }
 }
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
@@ -18584,47 +18629,17 @@ class TwitchSocketClient {
             case 'MESSAGE': {
                 const rewardData = data.data?.message && JSON.parse(data.data.message);
                 if (rewardData) {
-                    const rewardUser = rewardData.data.redemption.user;
-                    const reward = rewardData.data.redemption.reward;
-                    const rewardId = reward.id;
-                    const rewardRatingFileName = `${rewardId}.json`;
                     switch (rewardData.type) {
                         case 'reward-redeemed': {
-                            Logger.info(`Handle: receive reward "${reward.title}" from ${rewardUser.display_name}`);
-                            const fileHelper = new FileHelper();
+                            const rewardRedemption = rewardData.data.redemption;
+                            const reward = rewardRedemption.reward;
+                            const rewardRatingFileName = `${reward.id}.json`;
+                            Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
                             const rewardUsersDirectory = 'rewardUsers';
                             const rewardRatingsDirectory = 'rewardRatings';
-                            /* Write last rewarded UserName */
-                            try {
-                                fileHelper.write(rewardUsersDirectory, `${rewardId}.txt`, rewardUser.display_name);
-                            }
-                            catch (err) {
-                                Logger.error(`Handle: Error while write reward ${reward.title} for ${rewardUser.display_name}`, buildErrorFromUnknown(err));
-                            }
-                            /* Write reward rating in JSON */
-                            try {
-                                const rewardRatings = fileHelper.readJsonFile(rewardRatingsDirectory, rewardRatingFileName) || {};
-                                updateRewardRating(rewardData.data.redemption, rewardRatings);
-                                fileHelper.write(rewardRatingsDirectory, rewardRatingFileName, JSON.stringify(rewardRatings, null, 2));
-                            }
-                            catch (err) {
-                                Logger.error(`Handle: Error while write reward rating ${reward.title} for ${rewardUser.display_name}`, buildErrorFromUnknown(err));
-                            }
-                            /* Write reward rating in template string */
-                            try {
-                                const rewardRatings = fileHelper.readJsonFile(rewardRatingsDirectory, rewardRatingFileName) || {};
-                                const templates = fileHelper.readJsonFile(rewardRatingsDirectory, 'templates.json');
-                                if (templates?.[rewardId]) {
-                                    const templator = lodash.template(templates[rewardId]);
-                                    const preparedUsers = Object.values(rewardRatings)
-                                        .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
-                                        .slice(0, 10);
-                                    fileHelper.write(rewardRatingsDirectory, `${rewardId}.txt`, templator({ users: preparedUsers }));
-                                }
-                            }
-                            catch (err) {
-                                Logger.error(`Handle: Error while write template rating info ${reward.title} for ${rewardUser.display_name}`, buildErrorFromUnknown(err));
-                            }
+                            writeLastRewardedUser(rewardUsersDirectory, rewardRedemption);
+                            writeRewardRatingJSON(rewardRatingsDirectory, rewardRatingFileName, rewardRedemption);
+                            writeRewardRatingInTemplate(rewardRatingsDirectory, rewardRatingFileName, rewardRedemption);
                         }
                     }
                 }

@@ -6,7 +6,7 @@ import {logAction} from '../logger/logMethod.mjs';
 
 export class FileHelper {
     @logAction('Write file', {withArgs: true})
-    public write(directoryName: string, fileName: string, value: string) {
+    public static write(directoryName: string, fileName: string, value: string) {
         const filePath = path.join(directoryName, fileName);
 
         if (!fs.existsSync(directoryName)) {
@@ -22,7 +22,7 @@ export class FileHelper {
     }
 
     @logAction('Read json file')
-    public readJsonFile<T>(directoryName: string, fileName: string): T | undefined {
+    public static readJsonFile<T>(directoryName: string, fileName: string): T | undefined {
         const filePath = path.join(directoryName, fileName);
 
         if (!fs.existsSync(filePath)) {
