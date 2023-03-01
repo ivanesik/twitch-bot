@@ -1,4 +1,4 @@
-import {template} from 'lodash-es';
+import _ from 'lodash-es';
 import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
 import {MINUTE, SECOND} from '../constants/timers.mjs';
@@ -215,7 +215,7 @@ export class TwitchSocketClient {
                                     );
 
                                 if (templates?.[rewardId]) {
-                                    const templator = template(templates[rewardId]);
+                                    const templator = _.template(templates[rewardId]);
                                     const preparedUsers = Object.values(rewardRatings)
                                         .sort(
                                             (leftUser, rightUser) =>
