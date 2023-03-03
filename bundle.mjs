@@ -18509,10 +18509,8 @@ if (symIterator) {
   lodash.prototype[symIterator] = seq.toIterator;
 }
 
-function writeRewardRatingInTemplate(directory, ratingJsonFileName, template, rewardRedemption) {
-    const rewardUser = rewardRedemption.user;
+function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFileName, template, rewardRedemption) {
     const reward = rewardRedemption.reward;
-    const rewardId = reward.id;
     try {
         const rewardRatings = FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
         const templator = lodash.template(template);
@@ -18520,11 +18518,11 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, template, re
             .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
             .slice(0, 10);
         if (preparedUsers.length) {
-            FileHelper.write(directory, `${rewardId}.txt`, templator({ users: preparedUsers }));
+            FileHelper.write(directory, templatedFileName, templator({ users: preparedUsers }));
         }
     }
     catch (err) {
-        Logger.error(`Handle: Error while write template rating info ${reward.title} for ${rewardUser.display_name}`, buildErrorFromUnknown(err));
+        Logger.error(`Handle: Error while write template rating info from reward "${reward.title}" to ${templatedFileName}`, buildErrorFromUnknown(err));
     }
 }
 
@@ -18532,18 +18530,16 @@ function prepareUserName(userName) {
     return userName.trim().replaceAll('@', '');
 }
 
-async function writeOpositeRewardRatingJSON(directory, opositeRewards, twitchClient, rewardRedemption) {
+async function writeOpositeRewardRatingJSON(directory, fileName, opositeReward, twitchClient, rewardRedemption) {
     const { reward } = rewardRedemption;
     try {
         const userNameFromInput = prepareUserName(rewardRedemption.user_input);
-        const opositeReward = opositeRewards.find(({ targetRewardId }) => targetRewardId === reward.id);
         if (opositeReward && userNameFromInput) {
-            const opositeRewardFileName = `${opositeReward.opositeRewardId}.json`;
             const user = await twitchClient.getUserByLogin(userNameFromInput);
             if (user) {
-                const rewardRatings = FileHelper.readJsonFile(directory, opositeRewardFileName) || {};
+                const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
                 rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
-                FileHelper.write(directory, opositeRewardFileName, JSON.stringify(rewardRatings, null, 2));
+                FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
             }
             else {
                 Logger.error(`Can't find user with name: ${userNameFromInput}, `);
@@ -18667,17 +18663,30 @@ class TwitchSocketClient {
                     case 'reward-redeemed': {
                         const rewardRedemption = rewardData.data.redemption;
                         const reward = rewardRedemption.reward;
-                        const rewardRatingFileName = `${reward.id}.json`;
-                        const template = REWARD_RATINGS_CONFIG?.templates?.[reward.id];
-                        const opositeRewards = REWARD_RATINGS_CONFIG?.opositeRewards;
+                        const rewardFilesInfo = {
+                            rewardRatingFileName: `${reward.id}.json`,
+                            templateRewardRatingFileName: `${reward.id}.txt`,
+                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id],
+                        };
+                        const opositeReward = REWARD_RATINGS_CONFIG?.opositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
+                        const opositeRewardFilesInfo = opositeReward?.opositeRewardId
+                            ? {
+                                rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
+                                templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
+                                template: REWARD_RATINGS_CONFIG?.templates?.[opositeReward.opositeRewardId],
+                            }
+                            : undefined;
                         Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
                         writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
-                        writeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, rewardRatingFileName, rewardRedemption);
-                        if (opositeRewards) {
-                            writeOpositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, opositeRewards, this.twitchClient, rewardRedemption);
+                        writeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, rewardRedemption);
+                        if (opositeRewardFilesInfo && opositeReward) {
+                            await writeOpositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, opositeReward, this.twitchClient, rewardRedemption);
                         }
-                        if (template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, rewardRatingFileName, template, rewardRedemption);
+                        if (rewardFilesInfo.template) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, rewardFilesInfo.templateRewardRatingFileName, rewardFilesInfo.template, rewardRedemption);
+                        }
+                        if (opositeRewardFilesInfo?.template) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, opositeRewardFilesInfo.templateRewardRatingFileName, opositeRewardFilesInfo.template, rewardRedemption);
                         }
                     }
                 }

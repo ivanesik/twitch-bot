@@ -13,33 +13,26 @@ import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 
 export async function writeOpositeRewardRatingJSON(
     directory: string,
-    opositeRewards: IOpositeRewardInfo[],
+    fileName: string,
+    opositeReward: IOpositeRewardInfo,
     twitchClient: TwitchHttpClient,
     rewardRedemption: ITwitchRewardRedemption,
-) {
+): Promise<void> {
     const {reward} = rewardRedemption;
 
     try {
         const userNameFromInput = prepareUserName(rewardRedemption.user_input);
-        const opositeReward = opositeRewards.find(
-            ({targetRewardId}) => targetRewardId === reward.id,
-        );
 
         if (opositeReward && userNameFromInput) {
-            const opositeRewardFileName = `${opositeReward.opositeRewardId}.json`;
             const user = await twitchClient.getUserByLogin(userNameFromInput);
 
             if (user) {
                 const rewardRatings: IRewardRatingsInfo =
-                    FileHelper.readJsonFile(directory, opositeRewardFileName) || {};
+                    FileHelper.readJsonFile(directory, fileName) || {};
 
                 rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
 
-                FileHelper.write(
-                    directory,
-                    opositeRewardFileName,
-                    JSON.stringify(rewardRatings, null, 2),
-                );
+                FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
             } else {
                 Logger.error(`Can't find user with name: ${userNameFromInput}, `);
             }

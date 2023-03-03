@@ -11,12 +11,11 @@ import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.m
 export function writeRewardRatingInTemplate(
     directory: string,
     ratingJsonFileName: string,
+    templatedFileName: string,
     template: string,
     rewardRedemption: ITwitchRewardRedemption,
 ): void {
-    const rewardUser = rewardRedemption.user;
     const reward = rewardRedemption.reward;
-    const rewardId = reward.id;
 
     try {
         const rewardRatings: IRewardRatingsInfo =
@@ -28,11 +27,11 @@ export function writeRewardRatingInTemplate(
             .slice(0, 10);
 
         if (preparedUsers.length) {
-            FileHelper.write(directory, `${rewardId}.txt`, templator({users: preparedUsers}));
+            FileHelper.write(directory, templatedFileName, templator({users: preparedUsers}));
         }
     } catch (err) {
         Logger.error(
-            `Handle: Error while write template rating info ${reward.title} for ${rewardUser.display_name}`,
+            `Handle: Error while write template rating info from reward "${reward.title}" to ${templatedFileName}`,
             buildErrorFromUnknown(err),
         );
     }

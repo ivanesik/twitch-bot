@@ -32,6 +32,12 @@ const REWARD_RATINGS_CONFIG: IRewardRatingConfig | undefined = FileHelper.readJs
     'config.json',
 );
 
+interface IRewardFilesInfo {
+    template?: string;
+    rewardRatingFileName: string;
+    templateRewardRatingFileName: string;
+}
+
 export class TwitchSocketClient {
     private twitchClient: TwitchHttpClient;
     private websocket: WebSocket;
@@ -168,9 +174,26 @@ export class TwitchSocketClient {
                     case 'reward-redeemed': {
                         const rewardRedemption = rewardData.data.redemption;
                         const reward = rewardRedemption.reward;
-                        const rewardRatingFileName = `${reward.id}.json`;
-                        const template = REWARD_RATINGS_CONFIG?.templates?.[reward.id];
-                        const opositeRewards = REWARD_RATINGS_CONFIG?.opositeRewards;
+                        const rewardFilesInfo: IRewardFilesInfo = {
+                            rewardRatingFileName: `${reward.id}.json`,
+                            templateRewardRatingFileName: `${reward.id}.txt`,
+                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id],
+                        };
+
+                        const opositeReward = REWARD_RATINGS_CONFIG?.opositeRewards?.find(
+                            ({targetRewardId}) => targetRewardId === reward.id,
+                        );
+                        const opositeRewardFilesInfo: IRewardFilesInfo | undefined =
+                            opositeReward?.opositeRewardId
+                                ? {
+                                      rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
+                                      templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
+                                      template:
+                                          REWARD_RATINGS_CONFIG?.templates?.[
+                                              opositeReward.opositeRewardId
+                                          ],
+                                  }
+                                : undefined;
 
                         Logger.info(
                             `Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`,
@@ -179,24 +202,36 @@ export class TwitchSocketClient {
                         writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
                         writeRewardRatingJSON(
                             REWARD_RATINGS_DIRECTORY,
-                            rewardRatingFileName,
+                            rewardFilesInfo.rewardRatingFileName,
                             rewardRedemption,
                         );
 
-                        if (opositeRewards) {
-                            writeOpositeRewardRatingJSON(
+                        if (opositeRewardFilesInfo && opositeReward) {
+                            await writeOpositeRewardRatingJSON(
                                 REWARD_RATINGS_DIRECTORY,
-                                opositeRewards,
+                                opositeRewardFilesInfo.rewardRatingFileName,
+                                opositeReward,
                                 this.twitchClient,
                                 rewardRedemption,
                             );
                         }
 
-                        if (template) {
+                        if (rewardFilesInfo.template) {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
-                                rewardRatingFileName,
-                                template,
+                                rewardFilesInfo.rewardRatingFileName,
+                                rewardFilesInfo.templateRewardRatingFileName,
+                                rewardFilesInfo.template,
+                                rewardRedemption,
+                            );
+                        }
+
+                        if (opositeRewardFilesInfo?.template) {
+                            writeRewardRatingInTemplate(
+                                REWARD_RATINGS_DIRECTORY,
+                                opositeRewardFilesInfo.rewardRatingFileName,
+                                opositeRewardFilesInfo.templateRewardRatingFileName,
+                                opositeRewardFilesInfo.template,
                                 rewardRedemption,
                             );
                         }
