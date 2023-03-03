@@ -9,8 +9,4 @@ export function updateRewardRating(
         user: {id, display_name: displayName},
     } = rewardRedemption;
 
-    currentRating[id] = {
-        amount: currentRating[id]?.amount ? currentRating[id]?.amount + 1 : 1,
-        displayName,
-    };
 }
