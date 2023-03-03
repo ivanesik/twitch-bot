@@ -1,4 +1,4 @@
-interface IRewardRating {
+export interface IRewardRating {
     displayName: string;
     amount: number;
 }

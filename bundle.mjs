@@ -215,10 +215,10 @@ function writeLastRewardedUser(directory, rewardRedemption) {
     }
 }
 
-function updateRewardRating(rewardRedemption, currentRating) {
-    const { user: { id, display_name: displayName }, } = rewardRedemption;
-    currentRating[id] = {
-        amount: currentRating[id]?.amount ? currentRating[id]?.amount + 1 : 1,
+function updateRewardRating(user, currentRating) {
+    const { id, display_name: displayName } = user;
+    return {
+        amount: (currentRating[id]?.amount ?? 0) + 1,
         displayName,
     };
 }
@@ -226,8 +226,9 @@ function updateRewardRating(rewardRedemption, currentRating) {
 function writeRewardRatingJSON(directory, fileName, rewardRedemption) {
     const { user, reward } = rewardRedemption;
     try {
+        const { user } = rewardRedemption;
         const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
-        updateRewardRating(rewardRedemption, rewardRatings);
+        rewardRatings[user.id] = updateRewardRating(user, rewardRatings);
         FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
     }
     catch (err) {

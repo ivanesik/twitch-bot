@@ -15,10 +15,11 @@ export function writeRewardRatingJSON(
     const {user, reward} = rewardRedemption;
 
     try {
+        const {user} = rewardRedemption;
         const rewardRatings: IRewardRatingsInfo =
             FileHelper.readJsonFile(directory, fileName) || {};
 
-        updateRewardRating(rewardRedemption, rewardRatings);
+        rewardRatings[user.id] = updateRewardRating(user, rewardRatings);
 
         FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
     } catch (err) {

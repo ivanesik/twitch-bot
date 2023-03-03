@@ -1,16 +1,14 @@
-import type {IRewardRatingsInfo} from '../types/IRewardRatingsInfo';
-import type {ITwitchRewardRedemption} from '../types/TTwitchMessageData.mjs';
+import type {ITwitchUser} from '../types/ITwitchUser';
+import type {IRewardRating, IRewardRatingsInfo} from '../types/IRewardRatingsInfo';
 
 export function updateRewardRating(
-    rewardRedemption: ITwitchRewardRedemption,
+    user: ITwitchUser,
     currentRating: IRewardRatingsInfo,
-): void {
-    const {
-        user: {id, display_name: displayName},
-    } = rewardRedemption;
+): IRewardRating {
+    const {id, display_name: displayName} = user;
 
-    currentRating[id] = {
-        amount: currentRating[id]?.amount ? currentRating[id]?.amount + 1 : 1,
+    return {
+        amount: (currentRating[id]?.amount ?? 0) + 1,
         displayName,
     };
 }
