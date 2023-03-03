@@ -3,29 +3,44 @@ import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
-import type {IRewardData, TTwitchMessageData} from '../types/TTwitchMessageData.mjs';
+import type {IRewardRatingConfig} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
+import type {IRewardData, TTwitchMessageData} from '../types/twitch/TTwitchMessageData.mjs';
 
-import {builtTwitchAccessUrl} from '../utilities/builtTwitchAccessUrl.mjs';
+import {FileHelper} from '../file/FileHelper.mjs';
+import {TwitchHttpClient} from './TwitchHttpClient.mjs';
 
 import {Logger} from '../logger/logger.mjs';
 import {logAction} from '../logger/logMethod.mjs';
 import {logHandler} from '../logger/logHandler.mjs';
-import {writeLastRewardedUser} from '../utilities/writeLastRewardedUser.js';
-import {writeRewardRatingJSON} from '../utilities/writeRewardRatingJSON.js';
-import {writeRewardRatingInTemplate} from '../utilities/writeRewardRatingInTemplate.js';
+import {builtTwitchAccessUrl} from '../utilities/builtTwitchAccessUrl.mjs';
+import {writeLastRewardedUser} from '../utilities/writeLastRewardedUser.mjs';
+import {writeRewardRatingJSON} from '../utilities/writeRewardRatingJSON.mjs';
+import {writeRewardRatingInTemplate} from '../utilities/writeRewardRatingInTemplate.mjs';
+
+import {writeOpositeRewardRatingJSON} from '../utilities/writeOpositeRewardRatingJSON.mjs';
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({
     type: 'PING',
 });
 
+const REWARD_USERS_DIRECTORY = 'rewardUsers';
+const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
+
+const REWARD_RATINGS_CONFIG: IRewardRatingConfig | undefined = FileHelper.readJsonFile(
+    REWARD_RATINGS_DIRECTORY,
+    'config.json',
+);
+
 export class TwitchSocketClient {
+    private twitchClient: TwitchHttpClient;
     private websocket: WebSocket;
     private heartbeatTimer?: NodeJS.Timer;
     private pingTimeountTimer?: NodeJS.Timer;
 
     constructor(private userId: string, private accessToken: string, private clientId: string) {
         this.websocket = this.start();
+        this.twitchClient = new TwitchHttpClient(clientId, accessToken);
     }
 
     @logAction('Start websocket')
@@ -100,7 +115,7 @@ export class TwitchSocketClient {
     }
 
     @logHandler('Socket receive message')
-    private onMessage(event: MessageEvent): void {
+    private async onMessage(event: MessageEvent): Promise<void> {
         const data =
             typeof event.data === 'string'
                 ? (JSON.parse(event.data) as TTwitchMessageData)
@@ -145,29 +160,43 @@ export class TwitchSocketClient {
                 const rewardData: undefined | IRewardData =
                     data.data?.message && JSON.parse(data.data.message);
 
-                if (rewardData) {
-                    switch (rewardData.type) {
-                        case 'reward-redeemed': {
-                            const rewardRedemption = rewardData.data.redemption;
-                            const reward = rewardRedemption.reward;
-                            const rewardRatingFileName = `${reward.id}.json`;
+                if (!rewardData) {
+                    return;
+                }
 
-                            Logger.info(
-                                `Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`,
-                            );
+                switch (rewardData.type) {
+                    case 'reward-redeemed': {
+                        const rewardRedemption = rewardData.data.redemption;
+                        const reward = rewardRedemption.reward;
+                        const rewardRatingFileName = `${reward.id}.json`;
+                        const template = REWARD_RATINGS_CONFIG?.templates?.[reward.id];
+                        const opositeRewards = REWARD_RATINGS_CONFIG?.opositeRewards;
 
-                            const rewardUsersDirectory = 'rewardUsers';
-                            const rewardRatingsDirectory = 'rewardRatings';
+                        Logger.info(
+                            `Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`,
+                        );
 
-                            writeLastRewardedUser(rewardUsersDirectory, rewardRedemption);
-                            writeRewardRatingJSON(
-                                rewardRatingsDirectory,
-                                rewardRatingFileName,
+                        writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
+                        writeRewardRatingJSON(
+                            REWARD_RATINGS_DIRECTORY,
+                            rewardRatingFileName,
+                            rewardRedemption,
+                        );
+
+                        if (opositeRewards) {
+                            writeOpositeRewardRatingJSON(
+                                REWARD_RATINGS_DIRECTORY,
+                                opositeRewards,
+                                this.twitchClient,
                                 rewardRedemption,
                             );
+                        }
+
+                        if (template) {
                             writeRewardRatingInTemplate(
-                                rewardRatingsDirectory,
+                                REWARD_RATINGS_DIRECTORY,
                                 rewardRatingFileName,
+                                template,
                                 rewardRedemption,
                             );
                         }

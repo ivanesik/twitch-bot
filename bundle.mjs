@@ -92,13 +92,15 @@ function logAction(eventName, options) {
 
 class TwitchHttpClient {
     clientId;
-    constructor(clientId) {
+    accessToken;
+    constructor(clientId, accessToken) {
         this.clientId = clientId;
+        this.accessToken = accessToken;
     }
-    async validateAccessToken(accessToken) {
+    async validateAccessToken() {
         const response = await fetch('https://id.twitch.tv/oauth2/validate', {
             method: 'GET',
-            headers: { Authorization: `OAuth ${accessToken}` },
+            headers: { Authorization: `OAuth ${this.accessToken}` },
         });
         if (response.status === 200) {
             return true;
@@ -107,30 +109,30 @@ class TwitchHttpClient {
             return false;
         }
     }
-    async getUserIdByLogin(login, accessToken) {
+    async getUserByLogin(login) {
         const response = await fetch(`https://api.twitch.tv/helix/users?login=${login}`, {
             method: 'GET',
             headers: {
                 'Client-ID': this.clientId,
-                Authorization: 'Bearer ' + accessToken,
+                Authorization: 'Bearer ' + this.accessToken,
             },
         });
         const result = (await response.json());
-        return result.data?.[0]?.id;
+        return result.data?.[0];
     }
 }
 __decorate([
     logAction('Validate access token'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], TwitchHttpClient.prototype, "validateAccessToken", null);
 __decorate([
-    logAction('Getting user id by login'),
+    logAction('Getting user by login'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], TwitchHttpClient.prototype, "getUserIdByLogin", null);
+], TwitchHttpClient.prototype, "getUserByLogin", null);
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -139,36 +141,6 @@ const PUB_SUB_EVENTS = {
     /** A custom reward is redeemed in a channel.  */
     channelPoints: (userId) => `channel-points-channel-v1.${userId}`,
 };
-
-/** https://dev.twitch.tv/docs/pubsub/#available-topics */
-const APP_REQUIRED_SCOPES = ['channel:read:redemptions'];
-
-function builtTwitchAccessUrl(clientId) {
-    const url = new URL('https://id.twitch.tv/oauth2/authorize');
-    url.searchParams.set('response_type', 'token');
-    url.searchParams.set('client_id', clientId);
-    url.searchParams.set('redirect_uri', 'http://localhost');
-    url.searchParams.set('scope', APP_REQUIRED_SCOPES.join(' '));
-    return url.toString();
-}
-
-function logHandler(eventName) {
-    return function (_, __, descriptor) {
-        const originalFn = descriptor.value;
-        if (typeof originalFn !== 'function') {
-            throw new TypeError('logHandle can only decorate functions');
-        }
-        descriptor.value = function (...args) {
-            try {
-                Logger.info(`Handler: ${eventName}`);
-                return originalFn.call(this, ...args);
-            }
-            catch (err) {
-                Logger.error(`Handler error: ${eventName}`, buildErrorFromUnknown(err));
-            }
-        };
-    };
-}
 
 class FileHelper {
     static write(directoryName, fileName, value) {
@@ -204,6 +176,36 @@ __decorate([
     __metadata("design:returntype", Object)
 ], FileHelper, "readJsonFile", null);
 
+function logHandler(eventName) {
+    return function (_, __, descriptor) {
+        const originalFn = descriptor.value;
+        if (typeof originalFn !== 'function') {
+            throw new TypeError('logHandle can only decorate functions');
+        }
+        descriptor.value = function (...args) {
+            try {
+                Logger.info(`Handler: ${eventName}`);
+                return originalFn.call(this, ...args);
+            }
+            catch (err) {
+                Logger.error(`Handler error: ${eventName}`, buildErrorFromUnknown(err));
+            }
+        };
+    };
+}
+
+/** https://dev.twitch.tv/docs/pubsub/#available-topics */
+const APP_REQUIRED_SCOPES = ['channel:read:redemptions'];
+
+function builtTwitchAccessUrl(clientId) {
+    const url = new URL('https://id.twitch.tv/oauth2/authorize');
+    url.searchParams.set('response_type', 'token');
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', 'http://localhost');
+    url.searchParams.set('scope', APP_REQUIRED_SCOPES.join(' '));
+    return url.toString();
+}
+
 function writeLastRewardedUser(directory, rewardRedemption) {
     const { user, reward } = rewardRedemption;
     const rewardId = reward.id;
@@ -215,10 +217,10 @@ function writeLastRewardedUser(directory, rewardRedemption) {
     }
 }
 
-function updateRewardRating(user, currentRating) {
+function updateRewardRating(user, currentRating, isIncrease) {
     const { id, display_name: displayName } = user;
     return {
-        amount: (currentRating[id]?.amount ?? 0) + 1,
+        amount: (currentRating[id]?.amount ?? 0) + (isIncrease ? 1 : -1),
         displayName,
     };
 }
@@ -228,7 +230,7 @@ function writeRewardRatingJSON(directory, fileName, rewardRedemption) {
     try {
         const { user } = rewardRedemption;
         const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
-        rewardRatings[user.id] = updateRewardRating(user, rewardRatings);
+        rewardRatings[user.id] = updateRewardRating(user, rewardRatings, true);
         FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
     }
     catch (err) {
@@ -18507,21 +18509,18 @@ if (symIterator) {
   lodash.prototype[symIterator] = seq.toIterator;
 }
 
-function writeRewardRatingInTemplate(directory, ratingJsonFileName, rewardRedemption) {
+function writeRewardRatingInTemplate(directory, ratingJsonFileName, template, rewardRedemption) {
     const rewardUser = rewardRedemption.user;
     const reward = rewardRedemption.reward;
     const rewardId = reward.id;
     try {
         const rewardRatings = FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
-        const templates = FileHelper.readJsonFile(directory, 'templates.json');
-        if (templates?.[rewardId]) {
-            const templator = lodash.template(templates[rewardId]);
-            const preparedUsers = Object.values(rewardRatings)
-                .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
-                .slice(0, 10);
-            if (preparedUsers.length) {
-                FileHelper.write(directory, `${rewardId}.txt`, templator({ users: preparedUsers }));
-            }
+        const templator = lodash.template(template);
+        const preparedUsers = Object.values(rewardRatings)
+            .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
+            .slice(0, 10);
+        if (preparedUsers.length) {
+            FileHelper.write(directory, `${rewardId}.txt`, templator({ users: preparedUsers }));
         }
     }
     catch (err) {
@@ -18529,14 +18528,45 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, rewardRedemp
     }
 }
 
+function prepareUserName(userName) {
+    return userName.trim().replaceAll('@', '');
+}
+
+async function writeOpositeRewardRatingJSON(directory, opositeRewards, twitchClient, rewardRedemption) {
+    const { reward } = rewardRedemption;
+    try {
+        const userNameFromInput = prepareUserName(rewardRedemption.user_input);
+        const opositeReward = opositeRewards.find(({ targetRewardId }) => targetRewardId === reward.id);
+        if (opositeReward && userNameFromInput) {
+            const opositeRewardFileName = `${opositeReward.opositeRewardId}.json`;
+            const user = await twitchClient.getUserByLogin(userNameFromInput);
+            if (user) {
+                const rewardRatings = FileHelper.readJsonFile(directory, opositeRewardFileName) || {};
+                rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
+                FileHelper.write(directory, opositeRewardFileName, JSON.stringify(rewardRatings, null, 2));
+            }
+            else {
+                Logger.error(`Can't find user with name: ${userNameFromInput}, `);
+            }
+        }
+    }
+    catch (err) {
+        Logger.error(`Handle: Error while write oposite reward rating ${reward.title} from ${rewardRedemption.user.display_name} to decrease ${rewardRedemption.user_input}`, buildErrorFromUnknown(err));
+    }
+}
+
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({
     type: 'PING',
 });
+const REWARD_USERS_DIRECTORY = 'rewardUsers';
+const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
+const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile(REWARD_RATINGS_DIRECTORY, 'config.json');
 class TwitchSocketClient {
     userId;
     accessToken;
     clientId;
+    twitchClient;
     websocket;
     heartbeatTimer;
     pingTimeountTimer;
@@ -18545,6 +18575,7 @@ class TwitchSocketClient {
         this.accessToken = accessToken;
         this.clientId = clientId;
         this.websocket = this.start();
+        this.twitchClient = new TwitchHttpClient(clientId, accessToken);
     }
     start() {
         const websocket = new WebSocket(TWITCH_PUBSUB_URL);
@@ -18595,7 +18626,7 @@ class TwitchSocketClient {
         Logger.error(`Socket closed with code ${event.code} by reason: ${event.reason || 'UNKNOWN'}`);
         clearInterval(this.heartbeatTimer);
     }
-    onMessage(event) {
+    async onMessage(event) {
         const data = typeof event.data === 'string'
             ? JSON.parse(event.data)
             : undefined;
@@ -18629,18 +18660,24 @@ class TwitchSocketClient {
             }
             case 'MESSAGE': {
                 const rewardData = data.data?.message && JSON.parse(data.data.message);
-                if (rewardData) {
-                    switch (rewardData.type) {
-                        case 'reward-redeemed': {
-                            const rewardRedemption = rewardData.data.redemption;
-                            const reward = rewardRedemption.reward;
-                            const rewardRatingFileName = `${reward.id}.json`;
-                            Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
-                            const rewardUsersDirectory = 'rewardUsers';
-                            const rewardRatingsDirectory = 'rewardRatings';
-                            writeLastRewardedUser(rewardUsersDirectory, rewardRedemption);
-                            writeRewardRatingJSON(rewardRatingsDirectory, rewardRatingFileName, rewardRedemption);
-                            writeRewardRatingInTemplate(rewardRatingsDirectory, rewardRatingFileName, rewardRedemption);
+                if (!rewardData) {
+                    return;
+                }
+                switch (rewardData.type) {
+                    case 'reward-redeemed': {
+                        const rewardRedemption = rewardData.data.redemption;
+                        const reward = rewardRedemption.reward;
+                        const rewardRatingFileName = `${reward.id}.json`;
+                        const template = REWARD_RATINGS_CONFIG?.templates?.[reward.id];
+                        const opositeRewards = REWARD_RATINGS_CONFIG?.opositeRewards;
+                        Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
+                        writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
+                        writeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, rewardRatingFileName, rewardRedemption);
+                        if (opositeRewards) {
+                            writeOpositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, opositeRewards, this.twitchClient, rewardRedemption);
+                        }
+                        if (template) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, rewardRatingFileName, template, rewardRedemption);
                         }
                     }
                 }
@@ -18700,10 +18737,12 @@ __decorate([
     logHandler('Socket receive message'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TwitchSocketClient.prototype, "onMessage", null);
 
 Logger.success('Application started\n');
+// TODO: change to "userId" and move it into env variables
+const userName = 'viktorysa';
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;
 if (!clientId) {
@@ -18712,11 +18751,14 @@ if (!clientId) {
 if (!clientAccessToken) {
     throw Error('No CLIENT_ACCESS_TOKEN found. Please pass it into $CLIENT_ACCESS_TOKEN');
 }
-const twitchClient = new TwitchHttpClient(clientId);
-const userId = await twitchClient.getUserIdByLogin('viktorysa', clientAccessToken);
-const isAccessTokenValid = await twitchClient.validateAccessToken(clientAccessToken);
+const twitchClient = new TwitchHttpClient(clientId, clientAccessToken);
+const user = await twitchClient.getUserByLogin(userName);
+const isAccessTokenValid = await twitchClient.validateAccessToken();
+if (!user?.id) {
+    throw Error(`Can't init APP for user: ${userName}`);
+}
 if (isAccessTokenValid) {
-    const app = new TwitchSocketClient(userId, clientAccessToken, clientId);
+    const app = new TwitchSocketClient(user?.id, clientAccessToken, clientId);
     process.on('SIGINT', function () {
         Logger.info('Stop application');
         app.stop();

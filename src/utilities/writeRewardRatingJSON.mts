@@ -1,11 +1,11 @@
 import {FileHelper} from '../file/FileHelper.mjs';
 import {Logger} from '../logger/logger.mjs';
 
-import type {IRewardRatingsInfo} from '../types/IRewardRatingsInfo.js';
+import type {IRewardRatingsInfo} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 
-import {updateRewardRating} from './updateRewardRating.js';
+import {updateRewardRating} from './updateRewardRating.mjs';
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
-import type {ITwitchRewardRedemption} from '../types/TTwitchMessageData.mjs';
+import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
 
 export function writeRewardRatingJSON(
     directory: string,
@@ -19,7 +19,7 @@ export function writeRewardRatingJSON(
         const rewardRatings: IRewardRatingsInfo =
             FileHelper.readJsonFile(directory, fileName) || {};
 
-        rewardRatings[user.id] = updateRewardRating(user, rewardRatings);
+        rewardRatings[user.id] = updateRewardRating(user, rewardRatings, true);
 
         FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
     } catch (err) {

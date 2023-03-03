@@ -1,6 +1,7 @@
-import type {THexColor} from './common.mjs';
-import type {ITwitchRewardImage} from './ITwitchRewardImage.mjs';
-import type {ITwitchUser} from './ITwitchUser.js';
+import type {THexColor} from '../common.mjs';
+
+import type {ITwitchUser} from './ITwitchUser.mjs';
+import type {ITwitchRewardImage} from './ITwitchImage.mjs';
 
 /** @example '2023-02-24T21:33:07.704059988Z' */
 type TDateLikeType = string;
@@ -77,6 +78,8 @@ export interface ITwitchRewardRedemption {
     channel_id: string;
     redeemed_at: TDateLikeType;
     reward: ITwitchReward;
+    /** @example '@tester' */
+    user_input: string;
     status: 'UNFULFILLED';
 }
 
@@ -92,7 +95,7 @@ interface IRewardRedeemedMessageData {
     type: 'MESSAGE';
     error: undefined;
     data?: {
-        topic: 'channel-points-channel-v1.424342489';
+        topic: `channel-points-channel-v1.${number}`;
         message: string;
     };
 }

@@ -14,13 +14,34 @@ This is a chat bot for personal purposes
 
 ## Rating template
 
-To generate file with templated rating info:
+To generate a template string file based on rating:
 
-1. Create file `rewardRatings/templates.json`
+1. Сreate the file `rewardRatings/config.json` if it doesn't already exist
 2. Add template in lodash syntax (https://lodash.com/docs/4.17.15#template):
 
 ```json
 {
-    "<ratingId>": "Top 10 in chat: <% _.forEach(users, function(user, index) { %>#<%- index %> <%- user.displayName %> (<%- user.amount / 10 %>см), <% }); %>"
+    "templates": {
+        "<rewardId>": "Top 10 in chat: <% _.forEach(users, function(user, index) { %>#<%= index %> <%= user.displayName %> (<%= user.amount / 10 %>см), <% }); %>",
+        "<rewardId>": "Top 10 chaters: <% _.forEach(users, function(user, index) { %>#${index} ${user.displayName} <% }); %>"
+    }
+}
+```
+
+## Oposite rewards
+
+To configure the behavior when one reward lowers the rating of a user in another reward (or the same), you need to:
+
+1. Сreate the file `rewardRatings/config.json` if it doesn't already exist
+2. Add oposite rewards identifier
+
+```json
+{
+    "opositeRewards": [
+        {
+            "targetRewardId": "d8ce697a-9c06-457a-b0e4-974849153562",
+            "opositeRewardId": "9f6af828-9337-4733-97da-1576f5f9e5f1"
+        }
+    ]
 }
 ```

@@ -4,3 +4,13 @@ export interface IRewardTemplateInfo {
      */
     [rewardId: string]: string;
 }
+
+export interface IOpositeRewardInfo {
+    targetRewardId: string;
+    opositeRewardId: string;
+}
+
+export interface IRewardRatingConfig {
+    templates?: IRewardTemplateInfo;
+    opositeRewards?: IOpositeRewardInfo[];
+}
