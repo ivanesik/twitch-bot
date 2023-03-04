@@ -40,6 +40,7 @@ export async function writeOpositeRewardRatingJSON(
     } catch (err) {
         Logger.error(
             `Handle: Error while write oposite reward rating ${reward.title} from ${rewardRedemption.user.display_name} to decrease ${rewardRedemption.user_input}`,
+
             buildErrorFromUnknown(err),
         );
     }
