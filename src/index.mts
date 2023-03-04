@@ -36,6 +36,10 @@ if (isAccessTokenValid) {
 
         process.exit();
     });
+
+    process.on('uncaughtException', (err, origin) => {
+        Logger.error(`Caught exception. Exception origin: ${origin}`, err);
+    });
 } else {
     Logger.error("Access token isn't valid");
 }
