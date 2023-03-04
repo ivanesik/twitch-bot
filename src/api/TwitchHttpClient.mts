@@ -4,21 +4,28 @@ import type {
     IGetUsersResponse,
     ITwitchUserFromResponse,
 } from '../types/twitch/IGetUsersResponse.js';
+import type {ITwitchValidateTokenResponse} from '../types/twitch/ITwitchValidateTokenResponse.js';
+
+type IValidateAccessTokenResult =
+    | {isValid: true; result: ITwitchValidateTokenResponse}
+    | {isValid: false};
 
 export class TwitchHttpClient {
     constructor(private clientId: string, private accessToken: string) {}
 
     @logAction('Validate access token')
-    async validateAccessToken(): Promise<boolean> {
+    async validateAccessToken(): Promise<IValidateAccessTokenResult> {
         const response = await fetch('https://id.twitch.tv/oauth2/validate', {
             method: 'GET',
             headers: {Authorization: `OAuth ${this.accessToken}`},
         });
 
         if (response.status === 200) {
-            return true;
+            const result: ITwitchValidateTokenResponse = await response.json();
+
+            return {isValid: true, result};
         } else {
-            return false;
+            return {isValid: false};
         }
     }
 

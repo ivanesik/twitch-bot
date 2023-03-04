@@ -103,10 +103,11 @@ class TwitchHttpClient {
             headers: { Authorization: `OAuth ${this.accessToken}` },
         });
         if (response.status === 200) {
-            return true;
+            const result = await response.json();
+            return { isValid: true, result };
         }
         else {
-            return false;
+            return { isValid: false };
         }
     }
     async getUserByLogin(login) {
@@ -18750,8 +18751,6 @@ __decorate([
 ], TwitchSocketClient.prototype, "onMessage", null);
 
 Logger.success('Application started\n');
-// TODO: change to "userId" and move it into env variables
-const userName = 'viktorysa';
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;
 if (!clientId) {
@@ -18761,13 +18760,13 @@ if (!clientAccessToken) {
     throw Error('No CLIENT_ACCESS_TOKEN found. Please pass it into $CLIENT_ACCESS_TOKEN');
 }
 const twitchClient = new TwitchHttpClient(clientId, clientAccessToken);
-const user = await twitchClient.getUserByLogin(userName);
-const isAccessTokenValid = await twitchClient.validateAccessToken();
-if (!user?.id) {
-    throw Error(`Can't init APP for user: ${userName}`);
-}
-if (isAccessTokenValid) {
-    const app = new TwitchSocketClient(user?.id, clientAccessToken, clientId);
+const accessTokenValidationData = await twitchClient.validateAccessToken();
+if (accessTokenValidationData.isValid) {
+    const { user_id } = accessTokenValidationData.result;
+    if (!user_id) {
+        throw Error("Can't init APP for user with current token");
+    }
+    const app = new TwitchSocketClient(user_id, clientAccessToken, clientId);
     process.on('SIGINT', function () {
         Logger.info('Stop application');
         app.stop();
