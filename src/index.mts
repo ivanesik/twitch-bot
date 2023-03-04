@@ -5,8 +5,6 @@ import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
 
 Logger.success('Application started\n');
 
-// TODO: change to "userId" and move it into env variables
-const userName = 'viktorysa';
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;
 
@@ -19,16 +17,16 @@ if (!clientAccessToken) {
 }
 
 const twitchClient = new TwitchHttpClient(clientId, clientAccessToken);
+const accessTokenValidationData = await twitchClient.validateAccessToken();
 
-const user = await twitchClient.getUserByLogin(userName);
-const isAccessTokenValid = await twitchClient.validateAccessToken();
+if (accessTokenValidationData.isValid) {
+    const {user_id} = accessTokenValidationData.result;
 
-if (!user?.id) {
-    throw Error(`Can't init APP for user: ${userName}`);
-}
+    if (!user_id) {
+        throw Error("Can't init APP for user with current token");
+    }
 
-if (isAccessTokenValid) {
-    const app = new TwitchSocketClient(user?.id, clientAccessToken, clientId);
+    const app = new TwitchSocketClient(user_id, clientAccessToken, clientId);
 
     process.on('SIGINT', function () {
         Logger.info('Stop application');
