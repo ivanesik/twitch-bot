@@ -4,6 +4,7 @@ import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.m
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
 
+import type {ITwitchUser} from '../types/twitch/ITwitchUser.mjs';
 import type {IRewardRatingsInfo} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 import type {IOpositeRewardInfo} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
 
@@ -25,17 +26,24 @@ export async function writeOpositeRewardRatingJSON(
 
         if (opositeReward && userNameFromInput) {
             const user = await twitchClient.getUserByLogin(userNameFromInput);
+            const fakeUser: ITwitchUser = {
+                id: `unknown-${userNameFromInput}`,
+                login: userNameFromInput,
+                display_name: userNameFromInput,
+            };
+            const rewardRatings: IRewardRatingsInfo =
+                FileHelper.readJsonFile(directory, fileName) || {};
 
             if (user) {
-                const rewardRatings: IRewardRatingsInfo =
-                    FileHelper.readJsonFile(directory, fileName) || {};
-
                 rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
-
-                FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
             } else {
-                Logger.error(`Can't find user with name: ${userNameFromInput}, `);
+                Logger.error(
+                    `Can't find user with name: ${userNameFromInput}. Write unknown user with id ${fakeUser.id}`,
+                );
+                rewardRatings[fakeUser.id] = updateRewardRating(fakeUser, rewardRatings, false);
             }
+
+            FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
         }
     } catch (err) {
         Logger.error(

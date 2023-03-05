@@ -18537,14 +18537,20 @@ async function writeOpositeRewardRatingJSON(directory, fileName, opositeReward, 
         const userNameFromInput = prepareUserName(rewardRedemption.user_input);
         if (opositeReward && userNameFromInput) {
             const user = await twitchClient.getUserByLogin(userNameFromInput);
+            const fakeUser = {
+                id: `unknown-${userNameFromInput}`,
+                login: userNameFromInput,
+                display_name: userNameFromInput,
+            };
+            const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
             if (user) {
-                const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
                 rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
-                FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
             }
             else {
-                Logger.error(`Can't find user with name: ${userNameFromInput}, `);
+                Logger.error(`Can't find user with name: ${userNameFromInput}. Write unknown user with id ${fakeUser.id}`);
+                rewardRatings[fakeUser.id] = updateRewardRating(fakeUser, rewardRatings, false);
             }
+            FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
         }
     }
     catch (err) {
