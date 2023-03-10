@@ -3,10 +3,17 @@ import _ from 'lodash-es';
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
 
-import type {IRewardRatingsInfo} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
+import type {
+    IRewardRatingsInfo,
+    IRewardRating,
+} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
+
+interface IRewardRatingTemplateData extends IRewardRating {
+    ratingOrder: number;
+}
 
 export function writeRewardRatingInTemplate(
     directory: string,
@@ -24,7 +31,22 @@ export function writeRewardRatingInTemplate(
         const templator = _.template(template);
         const preparedUsers = Object.values(rewardRatings)
             .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
-            .slice(0, 10);
+            .slice(0, 10)
+            .reduce<IRewardRatingTemplateData[]>((acc, currentUser, index) => {
+                const previousUser: IRewardRatingTemplateData | undefined = acc[index - 1];
+                const ratingOrder = previousUser
+                    ? previousUser.amount === currentUser.amount
+                        ? previousUser.ratingOrder
+                        : previousUser.ratingOrder + 1
+                    : 1;
+
+                acc.push({
+                    ...currentUser,
+                    ratingOrder,
+                });
+
+                return acc;
+            }, []);
 
         if (preparedUsers.length) {
             FileHelper.write(directory, templatedFileName, templator({users: preparedUsers}));

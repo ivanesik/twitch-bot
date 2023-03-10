@@ -23,7 +23,7 @@ To generate a template string file based on rating:
 {
     "templates": {
         "<rewardId>": "Top 10 in chat: <% _.forEach(users, function(user, index) { %>#<%= index %> <%= user.displayName %> (<%= user.amount / 10 %>см), <% }); %>",
-        "<rewardId>": "Top 10 chaters: <% _.forEach(users, function(user, index) { %>#${index} ${user.displayName} <% }); %>"
+        "<rewardId>": "Top 10 chaters: <% _.forEach(users, function(user) { %>#${user.ratingOrder} ${user.displayName} <% }); %>"
     }
 }
 ```

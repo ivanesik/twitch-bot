@@ -18517,7 +18517,20 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFil
         const templator = lodash.template(template);
         const preparedUsers = Object.values(rewardRatings)
             .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
-            .slice(0, 10);
+            .slice(0, 10)
+            .reduce((acc, currentUser, index) => {
+            const previousUser = acc[index - 1];
+            const ratingOrder = previousUser
+                ? previousUser.amount === currentUser.amount
+                    ? previousUser.ratingOrder
+                    : previousUser.ratingOrder + 1
+                : 1;
+            acc.push({
+                ...currentUser,
+                ratingOrder,
+            });
+            return acc;
+        }, []);
         if (preparedUsers.length) {
             FileHelper.write(directory, templatedFileName, templator({ users: preparedUsers }));
         }
