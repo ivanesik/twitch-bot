@@ -223,6 +223,7 @@ function updateRewardRating(user, currentRating, isIncrease) {
     return {
         amount: (currentRating[id]?.amount ?? 0) + (isIncrease ? 1 : -1),
         displayName,
+        lastRewardDate: new Date().getTime(),
     };
 }
 
@@ -18516,7 +18517,11 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFil
         const rewardRatings = FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
         const templator = lodash.template(template);
         const preparedUsers = Object.values(rewardRatings)
-            .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
+            .sort((leftUser, rightUser) => {
+            const amountDiff = rightUser.amount - leftUser.amount;
+            const dateDiff = rightUser.lastRewardDate - leftUser.lastRewardDate;
+            return amountDiff || dateDiff;
+        })
             .slice(0, 10)
             .reduce((acc, currentUser, index) => {
             const previousUser = acc[index - 1];

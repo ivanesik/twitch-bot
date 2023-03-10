@@ -14,5 +14,6 @@ export function updateRewardRating(
     return {
         amount: (currentRating[id]?.amount ?? 0) + (isIncrease ? 1 : -1),
         displayName,
+        lastRewardDate: new Date().getTime(),
     };
 }

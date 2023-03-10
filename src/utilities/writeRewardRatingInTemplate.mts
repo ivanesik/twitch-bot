@@ -30,7 +30,12 @@ export function writeRewardRatingInTemplate(
 
         const templator = _.template(template);
         const preparedUsers = Object.values(rewardRatings)
-            .sort((leftUser, rightUser) => rightUser.amount - leftUser.amount)
+            .sort((leftUser, rightUser) => {
+                const amountDiff = rightUser.amount - leftUser.amount;
+                const dateDiff = rightUser.lastRewardDate - leftUser.lastRewardDate;
+
+                return amountDiff || dateDiff;
+            })
             .slice(0, 10)
             .reduce<IRewardRatingTemplateData[]>((acc, currentUser, index) => {
                 const previousUser: IRewardRatingTemplateData | undefined = acc[index - 1];
