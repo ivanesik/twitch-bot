@@ -40,37 +40,34 @@ interface IRewardFilesInfo {
 
 export class TwitchSocketClient {
     private twitchClient: TwitchHttpClient;
-    private websocket: WebSocket;
+    private websocket?: WebSocket;
     private heartbeatTimer?: NodeJS.Timer;
     private pingTimeountTimer?: NodeJS.Timer;
 
     constructor(private userId: string, private accessToken: string, private clientId: string) {
-        this.websocket = this.start();
+        this.start();
         this.twitchClient = new TwitchHttpClient(clientId, accessToken);
     }
 
     @logAction('Start websocket')
-    private start(): WebSocket {
-        const websocket = new WebSocket(TWITCH_PUBSUB_URL);
-        websocket.onopen = this.onOpen.bind(this);
-        websocket.onclose = this.onClose.bind(this);
-        websocket.onerror = this.onError.bind(this);
-        websocket.onmessage = this.onMessage.bind(this);
-
-        return websocket;
-    }
-
-    @logAction('Reconnect')
-    private reconnect(): void {
-        this.stop();
-        this.start();
+    private start(): void {
+        this.websocket = new WebSocket(TWITCH_PUBSUB_URL);
+        this.websocket.onopen = this.onOpen.bind(this);
+        this.websocket.onclose = this.onClose.bind(this);
+        this.websocket.onerror = this.onError.bind(this);
+        this.websocket.onmessage = this.onMessage.bind(this);
     }
 
     @logAction('Stop websocket')
     public stop(): void {
+        this.cleanup();
+        this.websocket?.close();
+    }
+
+    @logAction('Cleanup')
+    private cleanup(): void {
         clearInterval(this.heartbeatTimer);
         clearTimeout(this.pingTimeountTimer);
-        this.websocket.terminate();
     }
 
     @logAction('Subscribe', {onlyStart: true, withArgs: true})
@@ -83,16 +80,15 @@ export class TwitchSocketClient {
             },
         });
 
-        this.websocket.send(subscriptionData);
+        this.websocket?.send(subscriptionData);
     }
 
     @logAction('Send "PING"')
     private sendPing(): void {
-        Logger.info('Send PING message');
-        this.websocket.send(PING_MESSAGE);
+        this.websocket?.send(PING_MESSAGE);
 
         this.pingTimeountTimer = setTimeout(() => {
-            this.reconnect();
+            this.stop();
         }, 10 * SECOND);
     }
 
@@ -109,7 +105,7 @@ export class TwitchSocketClient {
     @logHandler('Socket error')
     private onError(error: ErrorEvent): void {
         Logger.error('Socket errored with data:', error);
-        this.reconnect();
+        this.stop();
     }
 
     @logHandler('Socket disconnect')
@@ -117,7 +113,8 @@ export class TwitchSocketClient {
         Logger.error(
             `Socket closed with code ${event.code} by reason: ${event.reason || 'UNKNOWN'}`,
         );
-        clearInterval(this.heartbeatTimer);
+        this.cleanup();
+        this.start();
     }
 
     @logHandler('Socket receive message')
@@ -155,7 +152,7 @@ export class TwitchSocketClient {
 
         switch (data.type) {
             case 'RECONNECT': {
-                this.reconnect();
+                this.stop();
                 break;
             }
             case 'PONG': {

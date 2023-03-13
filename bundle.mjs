@@ -18595,25 +18595,23 @@ class TwitchSocketClient {
         this.userId = userId;
         this.accessToken = accessToken;
         this.clientId = clientId;
-        this.websocket = this.start();
+        this.start();
         this.twitchClient = new TwitchHttpClient(clientId, accessToken);
     }
     start() {
-        const websocket = new WebSocket(TWITCH_PUBSUB_URL);
-        websocket.onopen = this.onOpen.bind(this);
-        websocket.onclose = this.onClose.bind(this);
-        websocket.onerror = this.onError.bind(this);
-        websocket.onmessage = this.onMessage.bind(this);
-        return websocket;
-    }
-    reconnect() {
-        this.stop();
-        this.start();
+        this.websocket = new WebSocket(TWITCH_PUBSUB_URL);
+        this.websocket.onopen = this.onOpen.bind(this);
+        this.websocket.onclose = this.onClose.bind(this);
+        this.websocket.onerror = this.onError.bind(this);
+        this.websocket.onmessage = this.onMessage.bind(this);
     }
     stop() {
+        this.cleanup();
+        this.websocket?.close();
+    }
+    cleanup() {
         clearInterval(this.heartbeatTimer);
         clearTimeout(this.pingTimeountTimer);
-        this.websocket.terminate();
     }
     subscribe(subscriptionName) {
         const subscriptionData = JSON.stringify({
@@ -18623,13 +18621,12 @@ class TwitchSocketClient {
                 auth_token: this.accessToken,
             },
         });
-        this.websocket.send(subscriptionData);
+        this.websocket?.send(subscriptionData);
     }
     sendPing() {
-        Logger.info('Send PING message');
-        this.websocket.send(PING_MESSAGE);
+        this.websocket?.send(PING_MESSAGE);
         this.pingTimeountTimer = setTimeout(() => {
-            this.reconnect();
+            this.stop();
         }, 10 * SECOND);
     }
     onOpen() {
@@ -18641,11 +18638,12 @@ class TwitchSocketClient {
     }
     onError(error) {
         Logger.error('Socket errored with data:', error);
-        this.reconnect();
+        this.stop();
     }
     onClose(event) {
         Logger.error(`Socket closed with code ${event.code} by reason: ${event.reason || 'UNKNOWN'}`);
-        clearInterval(this.heartbeatTimer);
+        this.cleanup();
+        this.start();
     }
     async onMessage(event) {
         const data = typeof event.data === 'string'
@@ -18672,7 +18670,7 @@ class TwitchSocketClient {
         }
         switch (data.type) {
             case 'RECONNECT': {
-                this.reconnect();
+                this.stop();
                 break;
             }
             case 'PONG': {
@@ -18723,20 +18721,20 @@ __decorate([
     logAction('Start websocket'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
-    __metadata("design:returntype", WebSocket)
-], TwitchSocketClient.prototype, "start", null);
-__decorate([
-    logAction('Reconnect'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
-], TwitchSocketClient.prototype, "reconnect", null);
+], TwitchSocketClient.prototype, "start", null);
 __decorate([
     logAction('Stop websocket'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], TwitchSocketClient.prototype, "stop", null);
+__decorate([
+    logAction('Cleanup'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], TwitchSocketClient.prototype, "cleanup", null);
 __decorate([
     logAction('Subscribe', { onlyStart: true, withArgs: true }),
     __metadata("design:type", Function),
