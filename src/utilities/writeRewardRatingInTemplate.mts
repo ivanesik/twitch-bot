@@ -10,6 +10,9 @@ import type {
 
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
+import type {IRewardTemplateInfo} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
+
+const DEFAULT_MAX_USERS = 10;
 
 interface IRewardRatingTemplateData extends IRewardRating {
     ratingOrder: number;
@@ -19,12 +22,13 @@ export function writeRewardRatingInTemplate(
     directory: string,
     ratingJsonFileName: string,
     templatedFileName: string,
-    template: string,
+    templateInfo: IRewardTemplateInfo,
     rewardRedemption: ITwitchRewardRedemption,
 ): void {
     const reward = rewardRedemption.reward;
 
     try {
+        const {template, maxUsers} = templateInfo;
         const rewardRatings: IRewardRatingsInfo =
             FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
 
@@ -36,7 +40,7 @@ export function writeRewardRatingInTemplate(
 
                 return amountDiff || dateDiff;
             })
-            .slice(0, 15)
+            .slice(0, maxUsers || DEFAULT_MAX_USERS)
             .reduce<IRewardRatingTemplateData[]>((acc, currentUser, index) => {
                 const previousUser: IRewardRatingTemplateData | undefined = acc[index - 1];
                 const ratingOrder =

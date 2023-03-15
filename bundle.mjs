@@ -18511,9 +18511,11 @@ if (symIterator) {
   lodash.prototype[symIterator] = seq.toIterator;
 }
 
-function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFileName, template, rewardRedemption) {
+const DEFAULT_MAX_USERS = 10;
+function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFileName, templateInfo, rewardRedemption) {
     const reward = rewardRedemption.reward;
     try {
+        const { template, maxUsers } = templateInfo;
         const rewardRatings = FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
         const templator = lodash.template(template);
         const preparedUsers = Object.values(rewardRatings)
@@ -18522,7 +18524,7 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFil
             const dateDiff = rightUser.lastRewardDate - leftUser.lastRewardDate;
             return amountDiff || dateDiff;
         })
-            .slice(0, 15)
+            .slice(0, maxUsers || DEFAULT_MAX_USERS)
             .reduce((acc, currentUser, index) => {
             const previousUser = acc[index - 1];
             const ratingOrder = previousUser && previousUser.amount === currentUser.amount

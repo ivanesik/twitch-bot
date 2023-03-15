@@ -3,7 +3,10 @@ import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
-import type {IRewardRatingConfig} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
+import type {
+    IRewardRatingConfig,
+    IRewardTemplateInfo,
+} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
 import type {IRewardData, TTwitchMessageData} from '../types/twitch/TTwitchMessageData.mjs';
 
 import {FileHelper} from '../file/FileHelper.mjs';
@@ -33,7 +36,7 @@ const REWARD_RATINGS_CONFIG: IRewardRatingConfig | undefined = FileHelper.readJs
 );
 
 interface IRewardFilesInfo {
-    template?: string;
+    template?: IRewardTemplateInfo;
     rewardRatingFileName: string;
     templateRewardRatingFileName: string;
 }
