@@ -18522,7 +18522,7 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFil
             const dateDiff = rightUser.lastRewardDate - leftUser.lastRewardDate;
             return amountDiff || dateDiff;
         })
-            .slice(0, 10)
+            .slice(0, 15)
             .reduce((acc, currentUser, index) => {
             const previousUser = acc[index - 1];
             const ratingOrder = previousUser && previousUser.amount === currentUser.amount

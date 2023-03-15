@@ -36,7 +36,7 @@ export function writeRewardRatingInTemplate(
 
                 return amountDiff || dateDiff;
             })
-            .slice(0, 10)
+            .slice(0, 15)
             .reduce<IRewardRatingTemplateData[]>((acc, currentUser, index) => {
                 const previousUser: IRewardRatingTemplateData | undefined = acc[index - 1];
                 const ratingOrder =
