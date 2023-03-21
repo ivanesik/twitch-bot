@@ -36,7 +36,7 @@ export function writeRewardRatingInTemplate(
         const preparedUsers = Object.values(rewardRatings)
             .sort((leftUser, rightUser) => {
                 const amountDiff = rightUser.amount - leftUser.amount;
-                const dateDiff = rightUser.lastRewardDate - leftUser.lastRewardDate;
+                const dateDiff = leftUser.lastRewardDate - rightUser.lastRewardDate;
 
                 return amountDiff || dateDiff;
             })

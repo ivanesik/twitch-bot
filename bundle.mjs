@@ -18521,7 +18521,7 @@ function writeRewardRatingInTemplate(directory, ratingJsonFileName, templatedFil
         const preparedUsers = Object.values(rewardRatings)
             .sort((leftUser, rightUser) => {
             const amountDiff = rightUser.amount - leftUser.amount;
-            const dateDiff = rightUser.lastRewardDate - leftUser.lastRewardDate;
+            const dateDiff = leftUser.lastRewardDate - rightUser.lastRewardDate;
             return amountDiff || dateDiff;
         })
             .slice(0, maxUsers || DEFAULT_MAX_USERS)
