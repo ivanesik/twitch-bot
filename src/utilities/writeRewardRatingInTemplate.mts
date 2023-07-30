@@ -10,7 +10,7 @@ import type {
 
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
-import type {IRewardTemplateInfo} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
+import type {IRewardTemplate} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
 
 const DEFAULT_MAX_USERS = 10;
 
@@ -22,7 +22,7 @@ export function writeRewardRatingInTemplate(
     directory: string,
     ratingJsonFileName: string,
     templatedFileName: string,
-    templateInfo: IRewardTemplateInfo,
+    templateInfo: IRewardTemplate,
     rewardRedemption: ITwitchRewardRedemption,
 ): void {
     const reward = rewardRedemption.reward;

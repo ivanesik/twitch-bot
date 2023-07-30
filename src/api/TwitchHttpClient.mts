@@ -11,7 +11,10 @@ type IValidateAccessTokenResult =
     | {isValid: false};
 
 export class TwitchHttpClient {
-    constructor(private clientId: string, private accessToken: string) {}
+    constructor(
+        private clientId: string,
+        private accessToken: string,
+    ) {}
 
     @logAction('Validate access token')
     async validateAccessToken(): Promise<IValidateAccessTokenResult> {

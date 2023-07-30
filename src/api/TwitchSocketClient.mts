@@ -1,11 +1,12 @@
-import WebSocket, {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
+import WebSocket from 'ws';
+import type {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
 import type {
+    IRewardTemplate,
     IRewardRatingConfig,
-    IRewardTemplateInfo,
 } from '../types/rewardsStorage/IRewardRatingConfig.mjs';
 import type {IRewardData, TTwitchMessageData} from '../types/twitch/TTwitchMessageData.mjs';
 
@@ -36,7 +37,7 @@ const REWARD_RATINGS_CONFIG: IRewardRatingConfig | undefined = FileHelper.readJs
 );
 
 interface IRewardFilesInfo {
-    template?: IRewardTemplateInfo;
+    template?: IRewardTemplate;
     rewardRatingFileName: string;
     templateRewardRatingFileName: string;
 }
@@ -47,7 +48,11 @@ export class TwitchSocketClient {
     private heartbeatTimer?: NodeJS.Timer;
     private pingTimeountTimer?: NodeJS.Timer;
 
-    constructor(private userId: string, private accessToken: string, private clientId: string) {
+    constructor(
+        private userId: string,
+        private accessToken: string,
+        private clientId: string,
+    ) {
         this.start();
         this.twitchClient = new TwitchHttpClient(clientId, accessToken);
     }
@@ -177,7 +182,7 @@ export class TwitchSocketClient {
                         const rewardFilesInfo: IRewardFilesInfo = {
                             rewardRatingFileName: `${reward.id}.json`,
                             templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id],
+                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id].normal,
                         };
 
                         const opositeReward = REWARD_RATINGS_CONFIG?.opositeRewards?.find(
@@ -191,7 +196,7 @@ export class TwitchSocketClient {
                                       template:
                                           REWARD_RATINGS_CONFIG?.templates?.[
                                               opositeReward.opositeRewardId
-                                          ],
+                                          ].normal,
                                   }
                                 : undefined;
 
