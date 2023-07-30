@@ -47,6 +47,8 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
+/* global Reflect, Promise, SuppressedError, Symbol */
+
 
 function __decorate(decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
@@ -58,6 +60,11 @@ function __decorate(decorators, target, key, desc) {
 function __metadata(metadataKey, metadataValue) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(metadataKey, metadataValue);
 }
+
+typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
+    var e = new Error(message);
+    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
+};
 
 function buildErrorFromUnknown(error) {
     return error instanceof Error ? error : new Error(String(error));
@@ -18689,14 +18696,14 @@ class TwitchSocketClient {
                         const rewardFilesInfo = {
                             rewardRatingFileName: `${reward.id}.json`,
                             templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id],
+                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id].normal,
                         };
                         const opositeReward = REWARD_RATINGS_CONFIG?.opositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
                         const opositeRewardFilesInfo = opositeReward?.opositeRewardId
                             ? {
                                 rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                 templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                template: REWARD_RATINGS_CONFIG?.templates?.[opositeReward.opositeRewardId],
+                                template: REWARD_RATINGS_CONFIG?.templates?.[opositeReward.opositeRewardId].normal,
                             }
                             : undefined;
                         Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);

@@ -24,8 +24,14 @@ To generate a template string file based on rating:
 {
     "templates": {
         "<rewardId>": {
-            "template": "Top 10 chaters: <% _.forEach(users, function(user) { %>#${user.ratingOrder} ${user.displayName} <% }); %>",
-            "maxUsers": 10
+            "normal": {
+                "template": "Top 10 chaters: <% _.forEach(users, function(user) { %>#${user.ratingOrder} ${user.displayName} <% }); %>",
+                "maxUsers": 10
+            },
+            "reverse": {
+                "template": "ANTI 3 users: <% _.forEach(users, function(user) { %>#${user.ratingOrder} ${user.displayName} <% }); %>",
+                "maxUsers": 3
+            }
         }
     }
 }
