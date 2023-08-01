@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
+
 import {Logger} from './logger/logger.mjs';
 
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
+
+dotenv.config({path: process.env.ENV_FILE});
 
 Logger.success('Application started\n');
 
