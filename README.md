@@ -57,5 +57,6 @@ To configure the behavior when one reward lowers the rating of a user in another
 
 ## TODO:
 
+-   Executable file for app
 -   Start application without deps
     -   Need to replace env-cmd to non CLI analog

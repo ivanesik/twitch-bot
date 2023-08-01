@@ -1,16 +1,13 @@
 import WebSocket from 'ws';
 import type {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
+import {config, type TRewardTemplate} from '../config/index.mjs';
+
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
 
-import type {
-    IRewardTemplate,
-    IRewardRatingConfig,
-} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
 import type {IRewardData, TTwitchMessageData} from '../types/twitch/TTwitchMessageData.mjs';
 
-import {FileHelper} from '../file/FileHelper.mjs';
 import {TwitchHttpClient} from './TwitchHttpClient.mjs';
 
 import {Logger} from '../logger/logger.mjs';
@@ -30,14 +27,10 @@ const PING_MESSAGE = JSON.stringify({
 
 const REWARD_USERS_DIRECTORY = 'rewardUsers';
 const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
-
-const REWARD_RATINGS_CONFIG: IRewardRatingConfig | undefined = FileHelper.readJsonFile(
-    REWARD_RATINGS_DIRECTORY,
-    'config.json',
-);
+const TEMPLATED_RATINGS_DIRECTORY = 'templatedRewardRatings';
 
 interface IRewardFilesInfo {
-    template?: IRewardTemplate;
+    template?: TRewardTemplate;
     rewardRatingFileName: string;
     templateRewardRatingFileName: string;
 }
@@ -182,10 +175,10 @@ export class TwitchSocketClient {
                         const rewardFilesInfo: IRewardFilesInfo = {
                             rewardRatingFileName: `${reward.id}.json`,
                             templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: REWARD_RATINGS_CONFIG?.templates?.[reward.id].normal,
+                            template: config.templates?.[reward.id].normal,
                         };
 
-                        const opositeReward = REWARD_RATINGS_CONFIG?.opositeRewards?.find(
+                        const opositeReward = config.opositeRewards?.find(
                             ({targetRewardId}) => targetRewardId === reward.id,
                         );
                         const opositeRewardFilesInfo: IRewardFilesInfo | undefined =
@@ -194,9 +187,7 @@ export class TwitchSocketClient {
                                       rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                       templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
                                       template:
-                                          REWARD_RATINGS_CONFIG?.templates?.[
-                                              opositeReward.opositeRewardId
-                                          ].normal,
+                                          config.templates?.[opositeReward.opositeRewardId].normal,
                                   }
                                 : undefined;
 
@@ -225,6 +216,7 @@ export class TwitchSocketClient {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
                                 rewardFilesInfo.rewardRatingFileName,
+                                TEMPLATED_RATINGS_DIRECTORY,
                                 rewardFilesInfo.templateRewardRatingFileName,
                                 rewardFilesInfo.template,
                                 rewardRedemption,
@@ -235,6 +227,7 @@ export class TwitchSocketClient {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
                                 opositeRewardFilesInfo.rewardRatingFileName,
+                                TEMPLATED_RATINGS_DIRECTORY,
                                 opositeRewardFilesInfo.templateRewardRatingFileName,
                                 opositeRewardFilesInfo.template,
                                 rewardRedemption,
