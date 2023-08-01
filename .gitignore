@@ -5,3 +5,4 @@ node_modules
 rewardUsers
 rewardRatings
 logs
+config.json

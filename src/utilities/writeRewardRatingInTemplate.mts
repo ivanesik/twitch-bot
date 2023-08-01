@@ -1,5 +1,7 @@
 import _ from 'lodash-es';
 
+import type {TRewardTemplate} from '../config/index.mjs';
+
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
 
@@ -10,19 +12,17 @@ import type {
 
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
-import type {IRewardTemplate} from '../types/rewardsStorage/IRewardRatingConfig.mjs';
-
-const DEFAULT_MAX_USERS = 10;
 
 interface IRewardRatingTemplateData extends IRewardRating {
     ratingOrder: number;
 }
 
 export function writeRewardRatingInTemplate(
-    directory: string,
+    ratingJsonDirectory: string,
     ratingJsonFileName: string,
+    templatedDirectory: string,
     templatedFileName: string,
-    templateInfo: IRewardTemplate,
+    templateInfo: TRewardTemplate,
     rewardRedemption: ITwitchRewardRedemption,
 ): void {
     const reward = rewardRedemption.reward;
@@ -30,7 +30,7 @@ export function writeRewardRatingInTemplate(
     try {
         const {template, maxUsers} = templateInfo;
         const rewardRatings: IRewardRatingsInfo =
-            FileHelper.readJsonFile(directory, ratingJsonFileName) || {};
+            FileHelper.readJsonFile(ratingJsonDirectory, ratingJsonFileName) || {};
 
         const templator = _.template(template);
         const preparedUsers = Object.values(rewardRatings)
@@ -40,7 +40,7 @@ export function writeRewardRatingInTemplate(
 
                 return amountDiff || dateDiff;
             })
-            .slice(0, maxUsers || DEFAULT_MAX_USERS)
+            .slice(0, maxUsers)
             .reduce<IRewardRatingTemplateData[]>((acc, currentUser, index) => {
                 const previousUser: IRewardRatingTemplateData | undefined = acc[index - 1];
                 const ratingOrder =
@@ -57,7 +57,11 @@ export function writeRewardRatingInTemplate(
             }, []);
 
         if (preparedUsers.length) {
-            FileHelper.write(directory, templatedFileName, templator({users: preparedUsers}));
+            FileHelper.write(
+                templatedDirectory,
+                templatedFileName,
+                templator({users: preparedUsers}),
+            );
         }
     } catch (err) {
         Logger.error(
