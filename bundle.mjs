@@ -47973,7 +47973,7 @@ if (symIterator) {
   lodash.prototype[symIterator] = seq.toIterator;
 }
 
-function writeRewardRatingInTemplate(ratingJsonDirectory, ratingJsonFileName, templatedDirectory, templatedFileName, templateInfo, rewardRedemption) {
+function writeRewardRatingInTemplate(ratingJsonDirectory, ratingJsonFileName, templatedDirectory, templatedFileName, templateInfo, rewardRedemption, isReverse) {
     const reward = rewardRedemption.reward;
     try {
         const { template, maxUsers } = templateInfo;
@@ -47983,7 +47983,7 @@ function writeRewardRatingInTemplate(ratingJsonDirectory, ratingJsonFileName, te
             .sort((leftUser, rightUser) => {
             const amountDiff = rightUser.amount - leftUser.amount;
             const dateDiff = leftUser.lastRewardDate - rightUser.lastRewardDate;
-            return amountDiff || dateDiff;
+            return (amountDiff || dateDiff) * (isReverse ? -1 : 1);
         })
             .slice(0, maxUsers)
             .reduce((acc, currentUser, index) => {
@@ -48044,6 +48044,7 @@ const PING_MESSAGE = JSON.stringify({
 const REWARD_USERS_DIRECTORY = 'rewardUsers';
 const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
 const TEMPLATED_RATINGS_DIRECTORY = 'templatedRewardRatings';
+const TEMPLATED_ANTI_RATINGS_DIRECTORY = 'templatedAntiRewardRatings';
 class TwitchSocketClient {
     userId;
     accessToken;
@@ -48152,12 +48153,24 @@ class TwitchSocketClient {
                             templateRewardRatingFileName: `${reward.id}.txt`,
                             template: config.templates?.[reward.id].normal,
                         };
+                        const antiRewardFilesInfo = {
+                            rewardRatingFileName: `${reward.id}.json`,
+                            templateRewardRatingFileName: `${reward.id}.txt`,
+                            template: config.templates?.[reward.id].reverse,
+                        };
                         const opositeReward = config.opositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
                         const opositeRewardFilesInfo = opositeReward?.opositeRewardId
                             ? {
                                 rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                 templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
                                 template: config.templates?.[opositeReward.opositeRewardId].normal,
+                            }
+                            : undefined;
+                        const opositeAntiRewardFilesInfo = opositeReward?.opositeRewardId
+                            ? {
+                                rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
+                                templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
+                                template: config.templates?.[opositeReward.opositeRewardId].reverse,
                             }
                             : undefined;
                         Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
@@ -48167,10 +48180,16 @@ class TwitchSocketClient {
                             await writeOpositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, opositeReward, this.twitchClient, rewardRedemption);
                         }
                         if (rewardFilesInfo.template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, rewardFilesInfo.templateRewardRatingFileName, rewardFilesInfo.template, rewardRedemption);
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, rewardFilesInfo.templateRewardRatingFileName, rewardFilesInfo.template, rewardRedemption, false);
+                        }
+                        if (antiRewardFilesInfo.template) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, antiRewardFilesInfo.rewardRatingFileName, TEMPLATED_ANTI_RATINGS_DIRECTORY, antiRewardFilesInfo.templateRewardRatingFileName, antiRewardFilesInfo.template, rewardRedemption, true);
                         }
                         if (opositeRewardFilesInfo?.template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, opositeRewardFilesInfo.templateRewardRatingFileName, opositeRewardFilesInfo.template, rewardRedemption);
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, opositeRewardFilesInfo.templateRewardRatingFileName, opositeRewardFilesInfo.template, rewardRedemption, false);
+                        }
+                        if (opositeAntiRewardFilesInfo?.template) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, opositeAntiRewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, opositeAntiRewardFilesInfo.templateRewardRatingFileName, opositeAntiRewardFilesInfo.template, rewardRedemption, true);
                         }
                     }
                 }

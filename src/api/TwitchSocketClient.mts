@@ -28,6 +28,7 @@ const PING_MESSAGE = JSON.stringify({
 const REWARD_USERS_DIRECTORY = 'rewardUsers';
 const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
 const TEMPLATED_RATINGS_DIRECTORY = 'templatedRewardRatings';
+const TEMPLATED_ANTI_RATINGS_DIRECTORY = 'templatedAntiRewardRatings';
 
 interface IRewardFilesInfo {
     template?: TRewardTemplate;
@@ -177,6 +178,11 @@ export class TwitchSocketClient {
                             templateRewardRatingFileName: `${reward.id}.txt`,
                             template: config.templates?.[reward.id].normal,
                         };
+                        const antiRewardFilesInfo: IRewardFilesInfo = {
+                            rewardRatingFileName: `${reward.id}.json`,
+                            templateRewardRatingFileName: `${reward.id}.txt`,
+                            template: config.templates?.[reward.id].reverse,
+                        };
 
                         const opositeReward = config.opositeRewards?.find(
                             ({targetRewardId}) => targetRewardId === reward.id,
@@ -188,6 +194,15 @@ export class TwitchSocketClient {
                                       templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
                                       template:
                                           config.templates?.[opositeReward.opositeRewardId].normal,
+                                  }
+                                : undefined;
+                        const opositeAntiRewardFilesInfo: IRewardFilesInfo | undefined =
+                            opositeReward?.opositeRewardId
+                                ? {
+                                      rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
+                                      templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
+                                      template:
+                                          config.templates?.[opositeReward.opositeRewardId].reverse,
                                   }
                                 : undefined;
 
@@ -220,6 +235,19 @@ export class TwitchSocketClient {
                                 rewardFilesInfo.templateRewardRatingFileName,
                                 rewardFilesInfo.template,
                                 rewardRedemption,
+                                false,
+                            );
+                        }
+
+                        if (antiRewardFilesInfo.template) {
+                            writeRewardRatingInTemplate(
+                                REWARD_RATINGS_DIRECTORY,
+                                antiRewardFilesInfo.rewardRatingFileName,
+                                TEMPLATED_ANTI_RATINGS_DIRECTORY,
+                                antiRewardFilesInfo.templateRewardRatingFileName,
+                                antiRewardFilesInfo.template,
+                                rewardRedemption,
+                                true,
                             );
                         }
 
@@ -231,6 +259,19 @@ export class TwitchSocketClient {
                                 opositeRewardFilesInfo.templateRewardRatingFileName,
                                 opositeRewardFilesInfo.template,
                                 rewardRedemption,
+                                false,
+                            );
+                        }
+
+                        if (opositeAntiRewardFilesInfo?.template) {
+                            writeRewardRatingInTemplate(
+                                REWARD_RATINGS_DIRECTORY,
+                                opositeAntiRewardFilesInfo.rewardRatingFileName,
+                                TEMPLATED_RATINGS_DIRECTORY,
+                                opositeAntiRewardFilesInfo.templateRewardRatingFileName,
+                                opositeAntiRewardFilesInfo.template,
+                                rewardRedemption,
+                                true,
                             );
                         }
                     }

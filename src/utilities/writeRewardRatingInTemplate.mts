@@ -24,6 +24,7 @@ export function writeRewardRatingInTemplate(
     templatedFileName: string,
     templateInfo: TRewardTemplate,
     rewardRedemption: ITwitchRewardRedemption,
+    isReverse: boolean,
 ): void {
     const reward = rewardRedemption.reward;
 
@@ -38,7 +39,7 @@ export function writeRewardRatingInTemplate(
                 const amountDiff = rightUser.amount - leftUser.amount;
                 const dateDiff = leftUser.lastRewardDate - rightUser.lastRewardDate;
 
-                return amountDiff || dateDiff;
+                return (amountDiff || dateDiff) * (isReverse ? -1 : 1);
             })
             .slice(0, maxUsers)
             .reduce<IRewardRatingTemplateData[]>((acc, currentUser, index) => {
