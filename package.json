@@ -3,9 +3,9 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "dev": "env-cmd -f .env.dev ts-node src/index.mts",
-        "build": "rollup --config",
-        "start": "env-cmd -f .env node ./bundle.mjs",
+        "dev": "ENV_FILE='.env.dev' ts-node src/index.mts",
+        "prod:build": "rollup --config",
+        "prod:start": "ENV_FILE='.env'  node ./bundle.mjs",
         "lint": "eslint ./",
         "typecheck": "tsc --noEmit",
         "prettier:check": "prettier  --check .",
@@ -47,7 +47,7 @@
         "typescript": "5.1.6"
     },
     "dependencies": {
-        "env-cmd": "10.1.0",
+        "dotenv": "16.3.1",
         "lodash-es": "4.17.21",
         "winston": "3.10.0",
         "winston-daily-rotate-file": "4.7.1",

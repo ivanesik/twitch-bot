@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-pnpm run start
+ENV_FILE=".env"  node ./bundle.mjs

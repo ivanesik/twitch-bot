@@ -1,18 +1,18 @@
-import require$$0$2 from 'util';
+import fs$2 from 'fs';
+import require$$1 from 'path';
 import require$$0$1 from 'os';
+import require$$3 from 'crypto';
+import require$$0$2 from 'util';
 import require$$0$3 from 'stream';
 import require$$0$4 from 'buffer';
 import require$$0$5 from 'events';
-import fs$1 from 'fs';
-import require$$1$2 from 'path';
-import require$$3 from 'zlib';
-import require$$1 from 'tty';
-import require$$1$1 from 'string_decoder';
+import require$$3$1 from 'zlib';
+import require$$1$1 from 'tty';
+import require$$1$2 from 'string_decoder';
 import require$$0$6 from 'http';
 import require$$1$3 from 'https';
-import require$$5 from 'crypto';
-import require$$3$1 from 'net';
-import require$$4 from 'tls';
+import require$$3$2 from 'net';
+import require$$4$1 from 'tls';
 import require$$7 from 'url';
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
@@ -45,6 +45,406 @@ function getAugmentedNamespace(n) {
 	});
 	return a;
 }
+
+var main$2 = {exports: {}};
+
+var name$2 = "dotenv";
+var version$2 = "16.3.1";
+var description$1 = "Loads environment variables from .env file";
+var main$1 = "lib/main.js";
+var types$1 = "lib/main.d.ts";
+var exports$1 = {
+	".": {
+		types: "./lib/main.d.ts",
+		require: "./lib/main.js",
+		"default": "./lib/main.js"
+	},
+	"./config": "./config.js",
+	"./config.js": "./config.js",
+	"./lib/env-options": "./lib/env-options.js",
+	"./lib/env-options.js": "./lib/env-options.js",
+	"./lib/cli-options": "./lib/cli-options.js",
+	"./lib/cli-options.js": "./lib/cli-options.js",
+	"./package.json": "./package.json"
+};
+var scripts$1 = {
+	"dts-check": "tsc --project tests/types/tsconfig.json",
+	lint: "standard",
+	"lint-readme": "standard-markdown",
+	pretest: "npm run lint && npm run dts-check",
+	test: "tap tests/*.js --100 -Rspec",
+	prerelease: "npm test",
+	release: "standard-version"
+};
+var repository$1 = {
+	type: "git",
+	url: "git://github.com/motdotla/dotenv.git"
+};
+var funding = "https://github.com/motdotla/dotenv?sponsor=1";
+var keywords$1 = [
+	"dotenv",
+	"env",
+	".env",
+	"environment",
+	"variables",
+	"config",
+	"settings"
+];
+var readmeFilename = "README.md";
+var license$1 = "BSD-2-Clause";
+var devDependencies$1 = {
+	"@definitelytyped/dtslint": "^0.0.133",
+	"@types/node": "^18.11.3",
+	decache: "^4.6.1",
+	sinon: "^14.0.1",
+	standard: "^17.0.0",
+	"standard-markdown": "^7.1.0",
+	"standard-version": "^9.5.0",
+	tap: "^16.3.0",
+	tar: "^6.1.11",
+	typescript: "^4.8.4"
+};
+var engines$1 = {
+	node: ">=12"
+};
+var browser$1 = {
+	fs: false
+};
+var require$$4 = {
+	name: name$2,
+	version: version$2,
+	description: description$1,
+	main: main$1,
+	types: types$1,
+	exports: exports$1,
+	scripts: scripts$1,
+	repository: repository$1,
+	funding: funding,
+	keywords: keywords$1,
+	readmeFilename: readmeFilename,
+	license: license$1,
+	devDependencies: devDependencies$1,
+	engines: engines$1,
+	browser: browser$1
+};
+
+const fs$1 = fs$2;
+const path$1 = require$$1;
+const os$3 = require$$0$1;
+const crypto = require$$3;
+const packageJson = require$$4;
+
+const version$1 = packageJson.version;
+
+const LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+
+// Parse src into an Object
+function parse$3 (src) {
+  const obj = {};
+
+  // Convert buffer to string
+  let lines = src.toString();
+
+  // Convert line breaks to same format
+  lines = lines.replace(/\r\n?/mg, '\n');
+
+  let match;
+  while ((match = LINE.exec(lines)) != null) {
+    const key = match[1];
+
+    // Default undefined or null to empty string
+    let value = (match[2] || '');
+
+    // Remove whitespace
+    value = value.trim();
+
+    // Check if double quoted
+    const maybeQuote = value[0];
+
+    // Remove surrounding quotes
+    value = value.replace(/^(['"`])([\s\S]*)\1$/mg, '$2');
+
+    // Expand newlines if double quoted
+    if (maybeQuote === '"') {
+      value = value.replace(/\\n/g, '\n');
+      value = value.replace(/\\r/g, '\r');
+    }
+
+    // Add to object
+    obj[key] = value;
+  }
+
+  return obj
+}
+
+function _parseVault (options) {
+  const vaultPath = _vaultPath(options);
+
+  // Parse .env.vault
+  const result = DotenvModule.configDotenv({ path: vaultPath });
+  if (!result.parsed) {
+    throw new Error(`MISSING_DATA: Cannot parse ${vaultPath} for an unknown reason`)
+  }
+
+  // handle scenario for comma separated keys - for use with key rotation
+  // example: DOTENV_KEY="dotenv://:key_1234@dotenv.org/vault/.env.vault?environment=prod,dotenv://:key_7890@dotenv.org/vault/.env.vault?environment=prod"
+  const keys = _dotenvKey(options).split(',');
+  const length = keys.length;
+
+  let decrypted;
+  for (let i = 0; i < length; i++) {
+    try {
+      // Get full key
+      const key = keys[i].trim();
+
+      // Get instructions for decrypt
+      const attrs = _instructions(result, key);
+
+      // Decrypt
+      decrypted = DotenvModule.decrypt(attrs.ciphertext, attrs.key);
+
+      break
+    } catch (error) {
+      // last key
+      if (i + 1 >= length) {
+        throw error
+      }
+      // try next key
+    }
+  }
+
+  // Parse decrypted .env string
+  return DotenvModule.parse(decrypted)
+}
+
+function _log (message) {
+  console.log(`[dotenv@${version$1}][INFO] ${message}`);
+}
+
+function _warn (message) {
+  console.log(`[dotenv@${version$1}][WARN] ${message}`);
+}
+
+function _debug (message) {
+  console.log(`[dotenv@${version$1}][DEBUG] ${message}`);
+}
+
+function _dotenvKey (options) {
+  // prioritize developer directly setting options.DOTENV_KEY
+  if (options && options.DOTENV_KEY && options.DOTENV_KEY.length > 0) {
+    return options.DOTENV_KEY
+  }
+
+  // secondary infra already contains a DOTENV_KEY environment variable
+  if (process.env.DOTENV_KEY && process.env.DOTENV_KEY.length > 0) {
+    return process.env.DOTENV_KEY
+  }
+
+  // fallback to empty string
+  return ''
+}
+
+function _instructions (result, dotenvKey) {
+  // Parse DOTENV_KEY. Format is a URI
+  let uri;
+  try {
+    uri = new URL(dotenvKey);
+  } catch (error) {
+    if (error.code === 'ERR_INVALID_URL') {
+      throw new Error('INVALID_DOTENV_KEY: Wrong format. Must be in valid uri format like dotenv://:key_1234@dotenv.org/vault/.env.vault?environment=development')
+    }
+
+    throw error
+  }
+
+  // Get decrypt key
+  const key = uri.password;
+  if (!key) {
+    throw new Error('INVALID_DOTENV_KEY: Missing key part')
+  }
+
+  // Get environment
+  const environment = uri.searchParams.get('environment');
+  if (!environment) {
+    throw new Error('INVALID_DOTENV_KEY: Missing environment part')
+  }
+
+  // Get ciphertext payload
+  const environmentKey = `DOTENV_VAULT_${environment.toUpperCase()}`;
+  const ciphertext = result.parsed[environmentKey]; // DOTENV_VAULT_PRODUCTION
+  if (!ciphertext) {
+    throw new Error(`NOT_FOUND_DOTENV_ENVIRONMENT: Cannot locate environment ${environmentKey} in your .env.vault file.`)
+  }
+
+  return { ciphertext, key }
+}
+
+function _vaultPath (options) {
+  let dotenvPath = path$1.resolve(process.cwd(), '.env');
+
+  if (options && options.path && options.path.length > 0) {
+    dotenvPath = options.path;
+  }
+
+  // Locate .env.vault
+  return dotenvPath.endsWith('.vault') ? dotenvPath : `${dotenvPath}.vault`
+}
+
+function _resolveHome (envPath) {
+  return envPath[0] === '~' ? path$1.join(os$3.homedir(), envPath.slice(1)) : envPath
+}
+
+function _configVault (options) {
+  _log('Loading env from encrypted .env.vault');
+
+  const parsed = DotenvModule._parseVault(options);
+
+  let processEnv = process.env;
+  if (options && options.processEnv != null) {
+    processEnv = options.processEnv;
+  }
+
+  DotenvModule.populate(processEnv, parsed, options);
+
+  return { parsed }
+}
+
+function configDotenv (options) {
+  let dotenvPath = path$1.resolve(process.cwd(), '.env');
+  let encoding = 'utf8';
+  const debug = Boolean(options && options.debug);
+
+  if (options) {
+    if (options.path != null) {
+      dotenvPath = _resolveHome(options.path);
+    }
+    if (options.encoding != null) {
+      encoding = options.encoding;
+    }
+  }
+
+  try {
+    // Specifying an encoding returns a string instead of a buffer
+    const parsed = DotenvModule.parse(fs$1.readFileSync(dotenvPath, { encoding }));
+
+    let processEnv = process.env;
+    if (options && options.processEnv != null) {
+      processEnv = options.processEnv;
+    }
+
+    DotenvModule.populate(processEnv, parsed, options);
+
+    return { parsed }
+  } catch (e) {
+    if (debug) {
+      _debug(`Failed to load ${dotenvPath} ${e.message}`);
+    }
+
+    return { error: e }
+  }
+}
+
+// Populates process.env from .env file
+function config$5 (options) {
+  const vaultPath = _vaultPath(options);
+
+  // fallback to original dotenv if DOTENV_KEY is not set
+  if (_dotenvKey(options).length === 0) {
+    return DotenvModule.configDotenv(options)
+  }
+
+  // dotenvKey exists but .env.vault file does not exist
+  if (!fs$1.existsSync(vaultPath)) {
+    _warn(`You set DOTENV_KEY but you are missing a .env.vault file at ${vaultPath}. Did you forget to build it?`);
+
+    return DotenvModule.configDotenv(options)
+  }
+
+  return DotenvModule._configVault(options)
+}
+
+function decrypt (encrypted, keyStr) {
+  const key = Buffer.from(keyStr.slice(-64), 'hex');
+  let ciphertext = Buffer.from(encrypted, 'base64');
+
+  const nonce = ciphertext.slice(0, 12);
+  const authTag = ciphertext.slice(-16);
+  ciphertext = ciphertext.slice(12, -16);
+
+  try {
+    const aesgcm = crypto.createDecipheriv('aes-256-gcm', key, nonce);
+    aesgcm.setAuthTag(authTag);
+    return `${aesgcm.update(ciphertext)}${aesgcm.final()}`
+  } catch (error) {
+    const isRange = error instanceof RangeError;
+    const invalidKeyLength = error.message === 'Invalid key length';
+    const decryptionFailed = error.message === 'Unsupported state or unable to authenticate data';
+
+    if (isRange || invalidKeyLength) {
+      const msg = 'INVALID_DOTENV_KEY: It must be 64 characters long (or more)';
+      throw new Error(msg)
+    } else if (decryptionFailed) {
+      const msg = 'DECRYPTION_FAILED: Please check your DOTENV_KEY';
+      throw new Error(msg)
+    } else {
+      console.error('Error: ', error.code);
+      console.error('Error: ', error.message);
+      throw error
+    }
+  }
+}
+
+// Populate process.env with parsed values
+function populate (processEnv, parsed, options = {}) {
+  const debug = Boolean(options && options.debug);
+  const override = Boolean(options && options.override);
+
+  if (typeof parsed !== 'object') {
+    throw new Error('OBJECT_REQUIRED: Please check the processEnv argument being passed to populate')
+  }
+
+  // Set process.env
+  for (const key of Object.keys(parsed)) {
+    if (Object.prototype.hasOwnProperty.call(processEnv, key)) {
+      if (override === true) {
+        processEnv[key] = parsed[key];
+      }
+
+      if (debug) {
+        if (override === true) {
+          _debug(`"${key}" is already defined and WAS overwritten`);
+        } else {
+          _debug(`"${key}" is already defined and was NOT overwritten`);
+        }
+      }
+    } else {
+      processEnv[key] = parsed[key];
+    }
+  }
+}
+
+const DotenvModule = {
+  configDotenv,
+  _configVault,
+  _parseVault,
+  config: config$5,
+  decrypt,
+  parse: parse$3,
+  populate
+};
+
+main$2.exports.configDotenv = DotenvModule.configDotenv;
+main$2.exports._configVault = DotenvModule._configVault;
+main$2.exports._parseVault = DotenvModule._parseVault;
+main$2.exports.config = DotenvModule.config;
+main$2.exports.decrypt = DotenvModule.decrypt;
+main$2.exports.parse = DotenvModule.parse;
+main$2.exports.populate = DotenvModule.populate;
+
+main$2.exports = DotenvModule;
+
+var mainExports = main$2.exports;
+var dotenv = /*@__PURE__*/getDefaultExportFromCjs(mainExports);
 
 var winston$1 = {};
 
@@ -10917,7 +11317,7 @@ function requireDevelopment () {
 	if (hasRequiredDevelopment) return development;
 	hasRequiredDevelopment = 1;
 	var create = requireDiagnostics();
-	var tty = require$$1.isatty(1);
+	var tty = require$$1$1.isatty(1);
 
 	/**
 	 * Create a new diagnostics logger.
@@ -10980,8 +11380,8 @@ function requireTailFile () {
 	if (hasRequiredTailFile) return tailFile;
 	hasRequiredTailFile = 1;
 
-	const fs = fs$1;
-	const { StringDecoder } = require$$1$1;
+	const fs = fs$2;
+	const { StringDecoder } = require$$1$2;
 	const { Stream } = readableExports;
 
 	/**
@@ -11107,10 +11507,10 @@ function requireFile () {
 	if (hasRequiredFile) return file;
 	hasRequiredFile = 1;
 
-	const fs = fs$1;
-	const path = require$$1$2;
+	const fs = fs$2;
+	const path = require$$1;
 	const asyncSeries = requireSeries();
-	const zlib = require$$3;
+	const zlib = require$$3$1;
 	const { MESSAGE } = tripleBeam;
 	const { Stream, PassThrough } = readableExports;
 	const TransportStream = requireWinstonTransport();
@@ -14532,7 +14932,7 @@ var objectHash = {exports: {}};
 
 (function (module, exports) {
 
-	var crypto = require$$5;
+	var crypto = require$$3;
 
 	/**
 	 * Exported function
@@ -20696,10 +21096,10 @@ function requireFileStreamRotator () {
 	/**
 	 * Module dependencies.
 	 */
-	var fs = fs$1;
-	var path = require$$1$2;
+	var fs = fs$2;
+	var path = require$$1;
 	var moment = requireMoment();
-	var crypto = require$$5;
+	var crypto = require$$3;
 
 	var EventEmitter = require$$0$5;
 
@@ -21385,11 +21785,11 @@ function requireFileStreamRotator () {
 	return FileStreamRotator_1;
 }
 
-var fs = fs$1;
+var fs = fs$2;
 var os = require$$0$1;
-var path = require$$1$2;
+var path = require$$1;
 var util$2 = require$$0$2;
-var zlib$1 = require$$3;
+var zlib$1 = require$$3$1;
 var hash = objectHashExports;
 var MESSAGE = tripleBeam.MESSAGE;
 var PassThrough = require$$0$3.PassThrough;
@@ -22063,7 +22463,7 @@ let Limiter$1 = class Limiter {
 
 var limiter = Limiter$1;
 
-const zlib = require$$3;
+const zlib = require$$3$1;
 
 const bufferUtil = bufferUtilExports;
 const Limiter = limiter;
@@ -23338,7 +23738,7 @@ function error(ErrorCtor, message, prefix, statusCode, errorCode) {
 }
 
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^net|tls$" }] */
-const { randomFillSync } = require$$5;
+const { randomFillSync } = require$$3;
 
 const PerMessageDeflate$1 = permessageDeflate;
 const { EMPTY_BUFFER: EMPTY_BUFFER$1 } = constants;
@@ -24309,9 +24709,9 @@ var extension = { format: format$1, parse: parse$1 };
 const EventEmitter = require$$0$5;
 const https = require$$1$3;
 const http = require$$0$6;
-const net = require$$3$1;
-const tls = require$$4;
-const { randomBytes, createHash } = require$$5;
+const net = require$$3$2;
+const tls = require$$4$1;
+const { randomBytes, createHash } = require$$3;
 const { URL: URL$1 } = require$$7;
 
 const PerMessageDeflate = permessageDeflate;
@@ -29569,23 +29969,23 @@ var z = /*#__PURE__*/Object.freeze({
 
 class FileHelper {
     static write(directoryName, fileName, value) {
-        const filePath = require$$1$2.join(directoryName, fileName);
-        if (!fs$1.existsSync(directoryName)) {
+        const filePath = require$$1.join(directoryName, fileName);
+        if (!fs$2.existsSync(directoryName)) {
             Logger.info(`Directory "${directoryName}" doesn't exists. Create directory.`);
-            fs$1.mkdirSync(directoryName);
+            fs$2.mkdirSync(directoryName);
         }
-        if (!fs$1.existsSync(filePath)) {
+        if (!fs$2.existsSync(filePath)) {
             Logger.info(`File "${fileName}" doesn't exists. Create file.`);
         }
-        fs$1.writeFileSync(filePath, value);
+        fs$2.writeFileSync(filePath, value);
     }
     static readJsonFile(directoryName, fileName) {
-        const filePath = require$$1$2.join(directoryName, fileName);
-        if (!fs$1.existsSync(filePath)) {
+        const filePath = require$$1.join(directoryName, fileName);
+        if (!fs$2.existsSync(filePath)) {
             Logger.info(`File "${fileName}" doesn't exists.`);
             return undefined;
         }
-        return JSON.parse(fs$1.readFileSync(filePath, 'utf8'));
+        return JSON.parse(fs$2.readFileSync(filePath, 'utf8'));
     }
 }
 __decorate([
@@ -48252,6 +48652,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TwitchSocketClient.prototype, "onMessage", null);
 
+dotenv.config({ path: process.env.ENV_FILE });
 Logger.success('Application started\n');
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;

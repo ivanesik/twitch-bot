@@ -1,8 +1,16 @@
+# IDE
 .vscode
 node_modules
-.env
-.env.dev
+
+# Runtime files
 rewardUsers
 rewardRatings
+templatedRewardRatings
+templatedAntiRewardRatings
+
 logs
+
+# Configs
+.env
+.env.dev
 config.json

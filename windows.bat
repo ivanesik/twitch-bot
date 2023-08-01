@@ -1,1 +1,1 @@
-pnpm start
+$env:ENV_FILE=".env"  node ./bundle.mjs
