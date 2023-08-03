@@ -66,3 +66,4 @@ To configure the behavior when one reward lowers the rating of a user in another
 
 -   Update templated strings on app start (for development and debug proposes)
 -   Executable binary app
+    -   https://www.npmjs.com/package/pkg

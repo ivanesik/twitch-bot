@@ -1,9 +1,15 @@
 import zod from 'zod';
 
 import {FileHelper} from '../file/FileHelper.mjs';
-import {configSchema, templateSchema, opositeRewardsSchema} from './validator.mjs';
+import {
+    configSchema,
+    templateSchema,
+    opositeRewardsSchema,
+    templateInfoSchema,
+} from './validator.mjs';
 
 export type TRewardTemplate = zod.infer<typeof templateSchema>;
+export type TRewardTemplateInfo = zod.infer<typeof templateInfoSchema>;
 export type TRewardRatingConfig = zod.infer<typeof configSchema>;
 export type TOpositeRewardInfo = zod.infer<typeof opositeRewardsSchema>;
 

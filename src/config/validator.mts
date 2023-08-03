@@ -10,7 +10,8 @@ export const templateSchema = zod.object({
         ),
     maxUsers: zod.number().min(1).max(100).default(DEFAULT_MAX_USERS),
 });
-const templateInfoSchema = zod.object({
+
+export const templateInfoSchema = zod.object({
     normal: templateSchema.optional().describe(`
         Template for users from Top to Bottom.
         For example users in template will be [userTop1, userTop2, userTop3, ...]
@@ -20,6 +21,7 @@ const templateInfoSchema = zod.object({
         For example users in template will be [userTop1000, userTop999, userTop998, ...]
     `),
 });
+
 const templatesInfoSchema = zod.record(templateInfoSchema);
 
 export const opositeRewardsSchema = zod.object({
