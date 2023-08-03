@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import type {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
-import {config, type TRewardTemplate} from '../config/index.mjs';
+import {config, type TRewardTemplate, type TRewardTemplateInfo} from '../config/index.mjs';
 
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
@@ -173,27 +173,35 @@ export class TwitchSocketClient {
                     case 'reward-redeemed': {
                         const rewardRedemption = rewardData.data.redemption;
                         const reward = rewardRedemption.reward;
-                        const rewardFilesInfo: IRewardFilesInfo = {
-                            rewardRatingFileName: `${reward.id}.json`,
-                            templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: config.templates?.[reward.id].normal,
-                        };
-                        const antiRewardFilesInfo: IRewardFilesInfo = {
-                            rewardRatingFileName: `${reward.id}.json`,
-                            templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: config.templates?.[reward.id].reverse,
-                        };
 
                         const opositeReward = config.opositeRewards?.find(
                             ({targetRewardId}) => targetRewardId === reward.id,
                         );
+
+                        const rewardTemplates: TRewardTemplateInfo | undefined =
+                            config.templates?.[reward.id];
+                        const opositeRewardTemplates: TRewardTemplateInfo | undefined =
+                            opositeReward
+                                ? config.templates?.[opositeReward.opositeRewardId]
+                                : undefined;
+
+                        const rewardFilesInfo: IRewardFilesInfo = {
+                            rewardRatingFileName: `${reward.id}.json`,
+                            templateRewardRatingFileName: `${reward.id}.txt`,
+                            template: rewardTemplates?.normal,
+                        };
+                        const antiRewardFilesInfo: IRewardFilesInfo = {
+                            rewardRatingFileName: `${reward.id}.json`,
+                            templateRewardRatingFileName: `${reward.id}.txt`,
+                            template: rewardTemplates?.reverse,
+                        };
+
                         const opositeRewardFilesInfo: IRewardFilesInfo | undefined =
                             opositeReward?.opositeRewardId
                                 ? {
                                       rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                       templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                      template:
-                                          config.templates?.[opositeReward.opositeRewardId].normal,
+                                      template: opositeRewardTemplates?.normal,
                                   }
                                 : undefined;
                         const opositeAntiRewardFilesInfo: IRewardFilesInfo | undefined =
@@ -201,8 +209,7 @@ export class TwitchSocketClient {
                                 ? {
                                       rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                       templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                      template:
-                                          config.templates?.[opositeReward.opositeRewardId].reverse,
+                                      template: opositeRewardTemplates?.reverse,
                                   }
                                 : undefined;
 

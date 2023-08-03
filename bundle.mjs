@@ -48548,29 +48548,33 @@ class TwitchSocketClient {
                     case 'reward-redeemed': {
                         const rewardRedemption = rewardData.data.redemption;
                         const reward = rewardRedemption.reward;
+                        const opositeReward = config.opositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
+                        const rewardTemplates = config.templates?.[reward.id];
+                        const opositeRewardTemplates = opositeReward
+                            ? config.templates?.[opositeReward.opositeRewardId]
+                            : undefined;
                         const rewardFilesInfo = {
                             rewardRatingFileName: `${reward.id}.json`,
                             templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: config.templates?.[reward.id].normal,
+                            template: rewardTemplates?.normal,
                         };
                         const antiRewardFilesInfo = {
                             rewardRatingFileName: `${reward.id}.json`,
                             templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: config.templates?.[reward.id].reverse,
+                            template: rewardTemplates?.reverse,
                         };
-                        const opositeReward = config.opositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
                         const opositeRewardFilesInfo = opositeReward?.opositeRewardId
                             ? {
                                 rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                 templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                template: config.templates?.[opositeReward.opositeRewardId].normal,
+                                template: opositeRewardTemplates?.normal,
                             }
                             : undefined;
                         const opositeAntiRewardFilesInfo = opositeReward?.opositeRewardId
                             ? {
                                 rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
                                 templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                template: config.templates?.[opositeReward.opositeRewardId].reverse,
+                                template: opositeRewardTemplates?.reverse,
                             }
                             : undefined;
                         Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
