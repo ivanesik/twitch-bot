@@ -5,7 +5,7 @@ import {Logger} from './logger/logger.mjs';
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
 
-dotenv.config({path: process.env.ENV_FILE});
+dotenv.config(process.env.ENV_FILE ? {path: process.env.ENV_FILE} : undefined);
 
 Logger.success('Application started\n');
 

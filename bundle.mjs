@@ -48656,7 +48656,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TwitchSocketClient.prototype, "onMessage", null);
 
-dotenv.config({ path: process.env.ENV_FILE });
+dotenv.config(process.env.ENV_FILE ? { path: process.env.ENV_FILE } : undefined);
 Logger.success('Application started\n');
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;
