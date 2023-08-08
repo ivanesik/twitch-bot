@@ -48373,8 +48373,12 @@ if (symIterator) {
   lodash.prototype[symIterator] = seq.toIterator;
 }
 
-function writeRewardRatingInTemplate(ratingJsonDirectory, ratingJsonFileName, templatedDirectory, templatedFileName, templateInfo, rewardRedemption, isReverse) {
+function writeRewardRatingInTemplate(ratingJsonDirectory, templatedDirectory, rewardRedemption, filesInfo, isReverse) {
+    const { template: templateInfo, rewardRatingFileName: ratingJsonFileName, templateRewardRatingFileName: templatedFileName, } = filesInfo;
     const reward = rewardRedemption.reward;
+    if (!templateInfo) {
+        return;
+    }
     try {
         const { template, maxUsers } = templateInfo;
         const rewardRatings = FileHelper.readJsonFile(ratingJsonDirectory, ratingJsonFileName) || {};
@@ -48583,17 +48587,13 @@ class TwitchSocketClient {
                         if (opositeRewardFilesInfo && opositeReward) {
                             await writeOpositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, opositeReward, this.twitchClient, rewardRedemption);
                         }
-                        if (rewardFilesInfo.template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, rewardFilesInfo.templateRewardRatingFileName, rewardFilesInfo.template, rewardRedemption, false);
+                        writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_RATINGS_DIRECTORY, rewardRedemption, rewardFilesInfo, false);
+                        writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_ANTI_RATINGS_DIRECTORY, rewardRedemption, antiRewardFilesInfo, true);
+                        if (opositeRewardFilesInfo) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_RATINGS_DIRECTORY, rewardRedemption, opositeRewardFilesInfo, false);
                         }
-                        if (antiRewardFilesInfo.template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, antiRewardFilesInfo.rewardRatingFileName, TEMPLATED_ANTI_RATINGS_DIRECTORY, antiRewardFilesInfo.templateRewardRatingFileName, antiRewardFilesInfo.template, rewardRedemption, true);
-                        }
-                        if (opositeRewardFilesInfo?.template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, opositeRewardFilesInfo.templateRewardRatingFileName, opositeRewardFilesInfo.template, rewardRedemption, false);
-                        }
-                        if (opositeAntiRewardFilesInfo?.template) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, opositeAntiRewardFilesInfo.rewardRatingFileName, TEMPLATED_RATINGS_DIRECTORY, opositeAntiRewardFilesInfo.templateRewardRatingFileName, opositeAntiRewardFilesInfo.template, rewardRedemption, true);
+                        if (opositeAntiRewardFilesInfo) {
+                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_ANTI_RATINGS_DIRECTORY, rewardRedemption, opositeAntiRewardFilesInfo, true);
                         }
                     }
                 }

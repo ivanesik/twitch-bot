@@ -1,7 +1,5 @@
 import _ from 'lodash-es';
 
-import type {TRewardTemplate} from '../config/index.mjs';
-
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
 
@@ -11,6 +9,7 @@ import type {
 } from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
+import type {IRewardFilesInfo} from '../types/rewardsStorage/IRewardFilesInfo.mjs';
 import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
 
 interface IRewardRatingTemplateData extends IRewardRating {
@@ -19,14 +18,21 @@ interface IRewardRatingTemplateData extends IRewardRating {
 
 export function writeRewardRatingInTemplate(
     ratingJsonDirectory: string,
-    ratingJsonFileName: string,
     templatedDirectory: string,
-    templatedFileName: string,
-    templateInfo: TRewardTemplate,
     rewardRedemption: ITwitchRewardRedemption,
+    filesInfo: IRewardFilesInfo,
     isReverse: boolean,
 ): void {
+    const {
+        template: templateInfo,
+        rewardRatingFileName: ratingJsonFileName,
+        templateRewardRatingFileName: templatedFileName,
+    } = filesInfo;
     const reward = rewardRedemption.reward;
+
+    if (!templateInfo) {
+        return;
+    }
 
     try {
         const {template, maxUsers} = templateInfo;

@@ -1,7 +1,7 @@
 import WebSocket from 'ws';
 import type {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
 
-import {config, type TRewardTemplate, type TRewardTemplateInfo} from '../config/index.mjs';
+import {config} from '../config/index.mjs';
 
 import {MINUTE, SECOND} from '../constants/timers.mjs';
 import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
@@ -19,6 +19,7 @@ import {writeRewardRatingJSON} from '../utilities/writeRewardRatingJSON.mjs';
 import {writeRewardRatingInTemplate} from '../utilities/writeRewardRatingInTemplate.mjs';
 
 import {writeOpositeRewardRatingJSON} from '../utilities/writeOpositeRewardRatingJSON.mjs';
+import type {IRewardFilesInfo} from '../types/rewardsStorage/IRewardFilesInfo.mjs';
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({
@@ -29,12 +30,6 @@ const REWARD_USERS_DIRECTORY = 'rewardUsers';
 const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
 const TEMPLATED_RATINGS_DIRECTORY = 'templatedRewardRatings';
 const TEMPLATED_ANTI_RATINGS_DIRECTORY = 'templatedAntiRewardRatings';
-
-interface IRewardFilesInfo {
-    template?: TRewardTemplate;
-    rewardRatingFileName: string;
-    templateRewardRatingFileName: string;
-}
 
 export class TwitchSocketClient {
     private twitchClient: TwitchHttpClient;
@@ -178,12 +173,10 @@ export class TwitchSocketClient {
                             ({targetRewardId}) => targetRewardId === reward.id,
                         );
 
-                        const rewardTemplates: TRewardTemplateInfo | undefined =
-                            config.templates?.[reward.id];
-                        const opositeRewardTemplates: TRewardTemplateInfo | undefined =
-                            opositeReward
-                                ? config.templates?.[opositeReward.opositeRewardId]
-                                : undefined;
+                        const rewardTemplates = config.templates?.[reward.id];
+                        const opositeRewardTemplates = opositeReward
+                            ? config.templates?.[opositeReward.opositeRewardId]
+                            : undefined;
 
                         const rewardFilesInfo: IRewardFilesInfo = {
                             rewardRatingFileName: `${reward.id}.json`,
@@ -234,50 +227,38 @@ export class TwitchSocketClient {
                             );
                         }
 
-                        if (rewardFilesInfo.template) {
+                        writeRewardRatingInTemplate(
+                            REWARD_RATINGS_DIRECTORY,
+                            TEMPLATED_RATINGS_DIRECTORY,
+                            rewardRedemption,
+                            rewardFilesInfo,
+                            false,
+                        );
+
+                        writeRewardRatingInTemplate(
+                            REWARD_RATINGS_DIRECTORY,
+                            TEMPLATED_ANTI_RATINGS_DIRECTORY,
+                            rewardRedemption,
+                            antiRewardFilesInfo,
+                            true,
+                        );
+
+                        if (opositeRewardFilesInfo) {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
-                                rewardFilesInfo.rewardRatingFileName,
                                 TEMPLATED_RATINGS_DIRECTORY,
-                                rewardFilesInfo.templateRewardRatingFileName,
-                                rewardFilesInfo.template,
                                 rewardRedemption,
+                                opositeRewardFilesInfo,
                                 false,
                             );
                         }
 
-                        if (antiRewardFilesInfo.template) {
+                        if (opositeAntiRewardFilesInfo) {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
-                                antiRewardFilesInfo.rewardRatingFileName,
                                 TEMPLATED_ANTI_RATINGS_DIRECTORY,
-                                antiRewardFilesInfo.templateRewardRatingFileName,
-                                antiRewardFilesInfo.template,
                                 rewardRedemption,
-                                true,
-                            );
-                        }
-
-                        if (opositeRewardFilesInfo?.template) {
-                            writeRewardRatingInTemplate(
-                                REWARD_RATINGS_DIRECTORY,
-                                opositeRewardFilesInfo.rewardRatingFileName,
-                                TEMPLATED_RATINGS_DIRECTORY,
-                                opositeRewardFilesInfo.templateRewardRatingFileName,
-                                opositeRewardFilesInfo.template,
-                                rewardRedemption,
-                                false,
-                            );
-                        }
-
-                        if (opositeAntiRewardFilesInfo?.template) {
-                            writeRewardRatingInTemplate(
-                                REWARD_RATINGS_DIRECTORY,
-                                opositeAntiRewardFilesInfo.rewardRatingFileName,
-                                TEMPLATED_RATINGS_DIRECTORY,
-                                opositeAntiRewardFilesInfo.templateRewardRatingFileName,
-                                opositeAntiRewardFilesInfo.template,
-                                rewardRedemption,
+                                opositeAntiRewardFilesInfo,
                                 true,
                             );
                         }
