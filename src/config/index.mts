@@ -14,6 +14,6 @@ export type TRewardTemplateInfo = ZodInfer<typeof templateInfoSchema>;
 export type TOpositeRewardInfo = ZodInfer<typeof opositeRewardsSchema>;
 export type TRewardRatingConfig = ZodInfer<typeof configSchema>;
 
-const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile('.', 'config.json');
+const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile(process.cwd(), 'config.json');
 
 export const config = configSchema.parse(REWARD_RATINGS_CONFIG);

@@ -30028,7 +30028,7 @@ const configSchema = z.object({
     opositeRewards: z.array(opositeRewardsSchema).optional(),
 });
 
-const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile('.', 'config.json');
+const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile(process.cwd(), 'config.json');
 const config = configSchema.parse(REWARD_RATINGS_CONFIG);
 
 const SECOND = 1000;
