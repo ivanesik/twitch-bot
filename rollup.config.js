@@ -5,10 +5,16 @@ import json from '@rollup/plugin-json';
 
 export default {
     input: 'src/index.mts',
-    output: {
-        file: 'bundle.mjs',
-        format: 'es',
-    },
+    output: [
+        {
+            dir: 'build/es',
+            format: 'es',
+        },
+        {
+            dir: 'build/cjs',
+            format: 'cjs',
+        },
+    ],
     external: ['fs', 'path'],
     plugins: [
         json(),

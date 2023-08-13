@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-node ./bundle.mjs
+node ./build/es/index.js

@@ -1,1 +1,1 @@
-node ./bundle.mjs
+node ./build/es/index.js

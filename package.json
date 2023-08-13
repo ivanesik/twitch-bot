@@ -4,8 +4,8 @@
     "type": "module",
     "scripts": {
         "dev": "ENV_FILE='.env.dev' ts-node src/index.mts",
-        "prod:build": "rollup --config",
-        "prod:start": "ENV_FILE='.env'  node ./bundle.mjs",
+        "build:prod": "rollup --config",
+        "start:prod": "ENV_FILE='.env'  node ./build/bundle.mjs",
         "lint": "eslint ./",
         "typecheck": "tsc --noEmit",
         "prettier:check": "prettier  --check .",

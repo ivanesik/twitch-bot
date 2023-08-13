@@ -16,7 +16,7 @@ This is a chat bot for personal purposes
     1. You can get `CLIENT_ID` from: https://dev.twitch.tv/console/apps/
     2. You can get `CLIENT_ACCESS_TOKEN` via this link (put your CLIENT_ID, and change redirect_uri if you have server) - `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=<CLIENT_ID>&redirect_uri=http%3A%2F%2Flocalhost&scope=channel%3Aread%3Aredemptions`
 3. Start app:
-    - Npm: `pnpm run prod:start`
+    - Npm: `pnpm run start:prod`
     - Windows: start `windows.bat`
     - UNIX: start `unix.sh`
 

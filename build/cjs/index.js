@@ -1,19 +1,21 @@
-import fs$2 from 'fs';
-import require$$1 from 'path';
-import require$$0$1 from 'os';
-import require$$3 from 'crypto';
-import require$$0$2 from 'util';
-import require$$0$3 from 'stream';
-import require$$0$4 from 'buffer';
-import require$$0$5 from 'events';
-import require$$3$1 from 'zlib';
-import require$$1$1 from 'tty';
-import require$$1$2 from 'string_decoder';
-import require$$0$6 from 'http';
-import require$$1$3 from 'https';
-import require$$3$2 from 'net';
-import require$$4$1 from 'tls';
-import require$$7 from 'url';
+'use strict';
+
+var fs$2 = require('fs');
+var require$$1 = require('path');
+var require$$0$1 = require('os');
+var require$$3 = require('crypto');
+var require$$0$2 = require('util');
+var require$$0$3 = require('stream');
+var require$$0$4 = require('buffer');
+var require$$0$5 = require('events');
+var require$$3$1 = require('zlib');
+var require$$1$1 = require('tty');
+var require$$1$2 = require('string_decoder');
+var require$$0$6 = require('http');
+var require$$1$3 = require('https');
+var require$$3$2 = require('net');
+var require$$4$1 = require('tls');
+var require$$7 = require('url');
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
@@ -48666,23 +48668,26 @@ if (!clientId) {
 if (!clientAccessToken) {
     throw Error('No CLIENT_ACCESS_TOKEN found. Please pass it into $CLIENT_ACCESS_TOKEN');
 }
-const twitchClient = new TwitchHttpClient(clientId, clientAccessToken);
-const accessTokenValidationData = await twitchClient.validateAccessToken();
-if (accessTokenValidationData.isValid) {
-    const { user_id } = accessTokenValidationData.result;
-    if (!user_id) {
-        throw Error("Can't init APP for user with current token");
+async function start(clientId, clientAccessToken) {
+    const twitchClient = new TwitchHttpClient(clientId, clientAccessToken);
+    const accessTokenValidationData = await twitchClient.validateAccessToken();
+    if (accessTokenValidationData.isValid) {
+        const { user_id } = accessTokenValidationData.result;
+        if (!user_id) {
+            throw Error("Can't init APP for user with current token");
+        }
+        const app = new TwitchSocketClient(user_id, clientAccessToken, clientId);
+        process.on('SIGINT', function () {
+            Logger.info('Stop application');
+            app.stop();
+            process.exit();
+        });
+        process.on('uncaughtException', (err, origin) => {
+            Logger.error(`Caught exception. Exception origin: ${origin}`, err);
+        });
     }
-    const app = new TwitchSocketClient(user_id, clientAccessToken, clientId);
-    process.on('SIGINT', function () {
-        Logger.info('Stop application');
-        app.stop();
-        process.exit();
-    });
-    process.on('uncaughtException', (err, origin) => {
-        Logger.error(`Caught exception. Exception origin: ${origin}`, err);
-    });
+    else {
+        Logger.error("Access token isn't valid");
+    }
 }
-else {
-    Logger.error("Access token isn't valid");
-}
+start(clientId, clientAccessToken);
