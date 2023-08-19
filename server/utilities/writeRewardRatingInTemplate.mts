@@ -1,16 +1,16 @@
 import _ from 'lodash-es';
 
-import {Logger} from '../logger/logger.mjs';
-import {FileHelper} from '../file/FileHelper.mjs';
-
 import type {
     IRewardRatingsInfo,
     IRewardRating,
 } from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
-
-import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 import type {IRewardFilesInfo} from '../types/rewardsStorage/IRewardFilesInfo.mjs';
 import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
+
+import {FileHelper} from '../file/FileHelper.mjs';
+import {Logger} from '../logger/logger.mjs';
+
+import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 
 interface IRewardRatingTemplateData extends IRewardRating {
     ratingOrder: number;

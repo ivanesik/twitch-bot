@@ -1,7 +1,7 @@
+import type {ITwitchRewardRedemption} from 'types/twitch/TTwitchMessageData.mjs';
+
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
-
-import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
 
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 

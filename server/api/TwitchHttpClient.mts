@@ -1,10 +1,7 @@
-import {logAction} from '../logger/logMethod.mjs';
+import type {IGetUsersResponse, ITwitchUserFromResponse} from 'types/twitch/IGetUsersResponse.js';
+import type {ITwitchValidateTokenResponse} from 'types/twitch/ITwitchValidateTokenResponse.js';
 
-import type {
-    IGetUsersResponse,
-    ITwitchUserFromResponse,
-} from '../types/twitch/IGetUsersResponse.js';
-import type {ITwitchValidateTokenResponse} from '../types/twitch/ITwitchValidateTokenResponse.js';
+import {logAction} from '../logger/logMethod.mjs';
 
 type IValidateAccessTokenResult =
     | {isValid: true; result: ITwitchValidateTokenResponse}
