@@ -1,25 +1,23 @@
-import WebSocket from 'ws';
-import type {ErrorEvent, CloseEvent, MessageEvent} from 'ws';
+import WebSocket, {type ErrorEvent, type CloseEvent, type MessageEvent} from 'ws';
+
+import {MINUTE, SECOND} from 'constants/timers.mjs';
+import {PUB_SUB_EVENTS} from 'constants/pubSubEvents.mjs';
+
+import type {IRewardFilesInfo} from 'types/rewardsStorage/IRewardFilesInfo.mjs';
+import type {IRewardData, TTwitchMessageData} from 'types/twitch/TTwitchMessageData.mjs';
+
+import {builtTwitchAccessUrl} from 'utilities/builtTwitchAccessUrl.mjs';
+import {writeLastRewardedUser} from 'utilities/writeLastRewardedUser.mjs';
+import {writeRewardRatingJSON} from 'utilities/writeRewardRatingJSON.mjs';
+import {writeRewardRatingInTemplate} from 'utilities/writeRewardRatingInTemplate.mjs';
+import {writeOpositeRewardRatingJSON} from 'utilities/writeOpositeRewardRatingJSON.mjs';
 
 import {config} from '../config/index.mjs';
-
-import {MINUTE, SECOND} from '../constants/timers.mjs';
-import {PUB_SUB_EVENTS} from '../constants/pubSubEvents.mjs';
-
-import type {IRewardData, TTwitchMessageData} from '../types/twitch/TTwitchMessageData.mjs';
-
-import {TwitchHttpClient} from './TwitchHttpClient.mjs';
-
 import {Logger} from '../logger/logger.mjs';
 import {logAction} from '../logger/logMethod.mjs';
 import {logHandler} from '../logger/logHandler.mjs';
-import {builtTwitchAccessUrl} from '../utilities/builtTwitchAccessUrl.mjs';
-import {writeLastRewardedUser} from '../utilities/writeLastRewardedUser.mjs';
-import {writeRewardRatingJSON} from '../utilities/writeRewardRatingJSON.mjs';
-import {writeRewardRatingInTemplate} from '../utilities/writeRewardRatingInTemplate.mjs';
 
-import {writeOpositeRewardRatingJSON} from '../utilities/writeOpositeRewardRatingJSON.mjs';
-import type {IRewardFilesInfo} from '../types/rewardsStorage/IRewardFilesInfo.mjs';
+import {TwitchHttpClient} from './TwitchHttpClient.mjs';
 
 const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
 const PING_MESSAGE = JSON.stringify({

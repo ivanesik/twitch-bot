@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 
 import {Logger} from './logger/logger.mjs';
-
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
 
@@ -20,7 +19,7 @@ if (!clientAccessToken) {
     throw Error('No CLIENT_ACCESS_TOKEN found. Please pass it into $CLIENT_ACCESS_TOKEN');
 }
 
-async function start(clientId: string, clientAccessToken: string) {
+async function start(clientId: string, clientAccessToken: string): Promise<void> {
     const twitchClient = new TwitchHttpClient(clientId, clientAccessToken);
     const accessTokenValidationData = await twitchClient.validateAccessToken();
 

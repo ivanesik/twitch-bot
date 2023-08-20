@@ -1,5 +1,6 @@
+import {buildErrorFromUnknown} from 'utilities/buildErrorFromUnknown.mjs';
+
 import {Logger} from './logger.mjs';
-import {buildErrorFromUnknown} from '../utilities/buildErrorFromUnknown.mjs';
 
 export function logAction(eventName: string, options?: {onlyStart?: boolean; withArgs?: boolean}) {
     return function (_: unknown, __: string | symbol, descriptor: PropertyDescriptor): void {

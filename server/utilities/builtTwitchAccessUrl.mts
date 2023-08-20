@@ -1,4 +1,4 @@
-import {APP_REQUIRED_SCOPES} from '../constants/twitchApp.mjs';
+import {APP_REQUIRED_SCOPES} from 'constants/twitchApp.mjs';
 
 export function builtTwitchAccessUrl(clientId: string): string {
     const url = new URL('https://id.twitch.tv/oauth2/authorize');

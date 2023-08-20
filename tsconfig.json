@@ -1,10 +1,11 @@
 {
     "compilerOptions": {
+        "baseUrl": "./",
         "module": "ESNext",
         "esModuleInterop": true,
         "target": "ESNext",
-        "moduleResolution": "node",
-        "sourceMap": true,
+        "moduleResolution": "Node",
+        "sourceMap": false,
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
         "strict": true,
@@ -12,9 +13,11 @@
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "verbatimModuleSyntax": true,
-        "resolveJsonModule": true
-    },
-    "ts-node": {
-        "esm": true
+        "resolveJsonModule": true,
+        "paths": {
+            "types/*": ["server/types/*"],
+            "constants/*": ["server/constants/*"],
+            "utilities/*": ["server/utilities/*"]
+        }
     }
 }

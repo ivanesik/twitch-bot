@@ -1,13 +1,11 @@
-import type {TwitchHttpClient} from '../api/TwitchHttpClient.mjs';
-import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
+import type {ITwitchUser} from 'types/twitch/ITwitchUser.mjs';
+import type {ITwitchRewardRedemption} from 'types/twitch/TTwitchMessageData.mjs';
+import type {IRewardRatingsInfo} from 'types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 import type {TOpositeRewardInfo} from '../config/index.mjs';
-
+import type {TwitchHttpClient} from '../api/TwitchHttpClient.mjs';
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
-
-import type {ITwitchUser} from '../types/twitch/ITwitchUser.mjs';
-import type {IRewardRatingsInfo} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 import {prepareUserName} from './prepareUserName.mjs';
 import {updateRewardRating} from './updateRewardRating.mjs';

@@ -1,11 +1,11 @@
-import {FileHelper} from '../file/FileHelper.mjs';
-import {Logger} from '../logger/logger.mjs';
-
+import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
 import type {IRewardRatingsInfo} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
+
+import {Logger} from '../logger/logger.mjs';
+import {FileHelper} from '../file/FileHelper.mjs';
 
 import {updateRewardRating} from './updateRewardRating.mjs';
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
-import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
 
 export function writeRewardRatingJSON(
     directory: string,
