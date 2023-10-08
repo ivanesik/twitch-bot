@@ -15,9 +15,12 @@
         "strictBindCallApply": true,
         "forceConsistentCasingInFileNames": false,
         "noFallthroughCasesInSwitch": true,
+        "jsx": "preserve",
+        "jsxImportSource": "solid-js",
+        "esModuleInterop": true,
         "paths": {
             "@/*": ["./*"]
         }
     },
-    "include": ["server"]
+    "include": ["./vite.config.ts", "server", "client"]
 }

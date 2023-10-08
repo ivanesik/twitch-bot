@@ -18,7 +18,8 @@
         "@nestjs/core": "10.2.7",
         "@nestjs/platform-express": "10.2.7",
         "reflect-metadata": "0.1.13",
-        "rxjs": "7.8.1"
+        "rxjs": "7.8.1",
+        "solid-js": "1.7.12"
     },
     "devDependencies": {
         "@nestjs/cli": "10.1.18",
@@ -31,9 +32,12 @@
         "eslint-config-prettier": "9.0.0",
         "eslint-plugin-prettier": "5.0.0",
         "prettier": "3.0.3",
+        "solid-devtools": "0.27.7",
         "ts-loader": "9.5.0",
         "ts-node": "10.9.1",
         "tsconfig-paths": "4.2.0",
-        "typescript": "5.2.2"
+        "typescript": "5.2.2",
+        "vite": "4.4.11",
+        "vite-plugin-solid": "2.7.0"
     }
 }
