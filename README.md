@@ -24,7 +24,7 @@ This is a chat bot for personal purposes
 
 To generate a template string file based on rating:
 
-1. Сreate the file `rewardRatings/config.json` if it doesn't already exist
+1. Create the file `rewardRatings/config.json` if it doesn't already exist
 2. Add template in lodash syntax (https://lodash.com/docs/4.17.15#template):
 
 ```json

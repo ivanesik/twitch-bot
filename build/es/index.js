@@ -2,6 +2,8 @@ import fs$2 from 'fs';
 import require$$1 from 'path';
 import require$$0$1 from 'os';
 import require$$3 from 'crypto';
+import readline from 'node:readline';
+import { stdin, stdout } from 'node:process';
 import require$$0$2 from 'util';
 import require$$0$3 from 'stream';
 import require$$0$4 from 'buffer';
@@ -26018,7 +26020,7 @@ var WebSocket$1 = /*@__PURE__*/getDefaultExportFromCjs(websocket);
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 
-const PUB_SUB_EVENTS = {
+const twitchPubSubTopics = {
     /** A custom reward is redeemed in a channel.  */
     channelPoints: (userId) => `channel-points-channel-v1.${userId}`,
 };
@@ -48500,7 +48502,7 @@ class TwitchSocketClient {
         this.heartbeatTimer = setInterval(() => {
             this.sendPing();
         }, 1 * MINUTE);
-        this.subscribe(PUB_SUB_EVENTS.channelPoints(this.userId));
+        this.subscribe(twitchPubSubTopics.channelPoints(this.userId));
     }
     onError(error) {
         Logger.error('Socket errored with data:', error);
@@ -48657,6 +48659,7 @@ __decorate([
 ], TwitchSocketClient.prototype, "onMessage", null);
 
 dotenv.config(process.env.ENV_FILE ? { path: process.env.ENV_FILE } : undefined);
+const rl = readline.createInterface({ input: stdin, output: stdout });
 Logger.success('Application started\n');
 const clientId = process.env.CLIENT_ID;
 const clientAccessToken = process.env.CLIENT_ACCESS_TOKEN;
@@ -48686,6 +48689,9 @@ async function start(clientId, clientAccessToken) {
     }
     else {
         Logger.error("Access token isn't valid");
+        rl.question('Press Enter to exit', () => {
+            rl.close();
+        });
     }
 }
 start(clientId, clientAccessToken);

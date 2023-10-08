@@ -1,4 +1,4 @@
-type TAuthorizationScope = 'channel:read:redemptions';
+export type TAuthorizationScope = 'channel:read:redemptions';
 
 export interface ITwitchValidateTokenResponse {
     client_id: string;

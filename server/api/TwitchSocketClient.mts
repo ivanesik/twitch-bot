@@ -1,7 +1,7 @@
 import WebSocket, {type ErrorEvent, type CloseEvent, type MessageEvent} from 'ws';
 
 import {MINUTE, SECOND} from 'constants/timers.mjs';
-import {PUB_SUB_EVENTS} from 'constants/pubSubEvents.mjs';
+import {twitchPubSubTopics} from 'constants/pubSubEvents.mjs';
 
 import type {IRewardFilesInfo} from 'types/rewardsStorage/IRewardFilesInfo.mjs';
 import type {IRewardData, TTwitchMessageData} from 'types/twitch/TTwitchMessageData.mjs';
@@ -94,7 +94,7 @@ export class TwitchSocketClient {
             this.sendPing();
         }, 1 * MINUTE);
 
-        this.subscribe(PUB_SUB_EVENTS.channelPoints(this.userId));
+        this.subscribe(twitchPubSubTopics.channelPoints(this.userId));
     }
 
     @logHandler('Socket error')
