@@ -1,10 +1,13 @@
 import dotenv from 'dotenv';
+import readline from 'node:readline';
+import {stdin, stdout} from 'node:process';
 
 import {Logger} from './logger/logger.mjs';
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
 
 dotenv.config(process.env.ENV_FILE ? {path: process.env.ENV_FILE} : undefined);
+const rl = readline.createInterface({input: stdin, output: stdout});
 
 Logger.success('Application started\n');
 
@@ -44,6 +47,10 @@ async function start(clientId: string, clientAccessToken: string): Promise<void>
         });
     } else {
         Logger.error("Access token isn't valid");
+
+        rl.question('Press Enter to exit', (): void => {
+            rl.close();
+        });
     }
 }
 
