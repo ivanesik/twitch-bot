@@ -22,9 +22,9 @@ jobs:
                   version: 7
                   run_install: true
             - name: Lint code
-              run: pnpm run lint
+              run: cd legacy-app && pnpm run lint
             - name: Check prettier
-              run: pnpm run prettier:check
+              run: cd legacy-app && pnpm run prettier:check
 
     typecheck:
         name: Typecheck
@@ -41,4 +41,4 @@ jobs:
                   version: 7
                   run_install: true
             - name: Check typecheck
-              run: pnpm run typecheck
+              run: cd legacy-app && pnpm run typecheck

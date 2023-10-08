@@ -1,0 +1,37 @@
+{
+    "window.zoomLevel": 0,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.fontFamily": "JetBrains Mono",
+    "editor.fontSize": 13.3,
+    "editor.wordWrap": "on",
+    "editor.fontLigatures": true,
+    "editor.suggestSelection": "first",
+    "editor.renderWhitespace": "trailing",
+    "editor.formatOnSaveMode": "modifications",
+    "editor.rulers": [{"column": 100}],
+    // Additional '_' seperator
+    "editor.wordSeparators": "`~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?_",
+    "workbench.colorTheme": "Darcula", // extension
+    "workbench.iconTheme": "vscode-icons", // extension
+    "workbench.editor.wrapTabs": true,
+    "workbench.editor.decorations.colors": true,
+    // "workbench.editor.tabSizing": "shrink", // Вместо переноса табов сокращает название в них, конфилктует с "workbench.editor.wrapTabs"
+    "workbench.editor.enablePreviewFromCodeNavigation": true,
+
+    "redhat.telemetry.enabled": false,
+
+    // Code Style
+    "typescript.preferences.quoteStyle": "single",
+    "javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": false,
+    "typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces": false,
+
+    "files.watcherExclude": {
+        "**/.vscode/**": true,
+        "**/build/**": true,
+        "**/node_modules/*": true
+        // TODO: custom for every project
+    },
+    "files.associations": {
+        "*.mdx": "mdx"
+    }
+}
