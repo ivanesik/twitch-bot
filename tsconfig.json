@@ -22,5 +22,11 @@
             "@/*": ["./*"]
         }
     },
-    "include": ["./vite.config.ts", "server", "client"]
+    "include": [
+        "./vite.config.ts",
+        "./tailwind.config.ts",
+        "postcss.config.ts",
+        "server",
+        "client"
+    ]
 }
