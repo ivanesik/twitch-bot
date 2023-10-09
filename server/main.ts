@@ -1,6 +1,6 @@
 import {NestFactory} from '@nestjs/core';
 import {createServer as createViteServer} from 'vite';
-// import {WINSTON_MODULE_NEST_PROVIDER} from 'nest-winston';
+import {WINSTON_MODULE_NEST_PROVIDER} from 'nest-winston';
 
 import {AppModule} from './app.module';
 
@@ -16,7 +16,7 @@ async function bootstrap() {
     );
 
     app.use(vite.middlewares);
-    // app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+    app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
     await app.listen(PORT);
 }
