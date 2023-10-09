@@ -5,7 +5,10 @@ module.exports = {
         tsconfigRootDir: __dirname,
         sourceType: 'module',
     },
-    plugins: ['@typescript-eslint/eslint-plugin'],
+    plugins: [
+        '@typescript-eslint/eslint-plugin',
+        'eslint-plugin-import-helpers',
+    ],
     extends: [
         'plugin:@typescript-eslint/recommended',
         'plugin:prettier/recommended',
@@ -14,11 +17,46 @@ module.exports = {
     env: {
         node: true,
     },
-    ignorePatterns: ['.eslintrc.js'],
     rules: {
-        '@typescript-eslint/interface-name-prefix': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
         '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/naming-convention': [
+            'error',
+            {
+                selector: 'interface',
+                format: ['PascalCase'],
+                prefix: ['I'],
+            },
+            {
+                selector: 'typeAlias',
+                format: ['PascalCase'],
+                prefix: ['T'],
+            },
+            {
+                selector: 'enum',
+                format: ['PascalCase'],
+                prefix: ['E'],
+            },
+            {
+                selector: 'enumMember',
+                format: ['UPPER_CASE'],
+            },
+        ],
+        'import-helpers/order-imports': [
+            'error',
+            {
+                newlinesBetween: 'always',
+                groups: [
+                    'module',
+                    '/.*constants//',
+                    '/.*types//',
+                    '/.*utilities//',
+                    'parent',
+                    'sibling',
+                    'index',
+                ],
+            },
+        ],
     },
 };
