@@ -2,22 +2,5 @@
     "root": true,
     "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
     "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint", "eslint-plugin-import-helpers"],
-    "rules": {
-        "import-helpers/order-imports": [
-            "error",
-            {
-                "newlinesBetween": "always",
-                "groups": [
-                    "module",
-                    "/.*constants//",
-                    "/.*types//",
-                    "/.*utilities//",
-                    "parent",
-                    "sibling",
-                    "index"
-                ]
-            }
-        ]
-    }
+    "plugins": ["@typescript-eslint"]
 }
