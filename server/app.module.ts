@@ -1,5 +1,6 @@
 import {ViteDevServer} from 'vite';
 import {DynamicModule, Module} from '@nestjs/common';
+import {ConfigModule} from '@nestjs/config';
 import {WinstonModule} from 'nest-winston';
 import {transports, format} from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
@@ -19,6 +20,7 @@ export class AppModule {
         return {
             module: AppModule,
             imports: [
+                ConfigModule.forRoot(),
                 WinstonModule.forRoot({
                     transports: [
                         new transports.Console({
@@ -41,16 +43,6 @@ export class AppModule {
                             maxFiles: '20d',
                         }),
                     ],
-                    levels: {
-                        error: 0,
-                        warn: 1,
-                        info: 2,
-                        http: 3,
-                        verbose: 4,
-                        debug: 5,
-                        silly: 6,
-                        success: 7,
-                    },
                 }),
             ],
             providers: [

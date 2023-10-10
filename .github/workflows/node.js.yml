@@ -19,7 +19,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
-                  version: 7
+                  version: 8
                   run_install: true
             - name: Lint code
               run: pnpm run lint:check
@@ -38,7 +38,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
-                  version: 7
+                  version: 8
                   run_install: true
             - name: Check typecheck
               run: pnpm run build
@@ -55,7 +55,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
-                  version: 7
+                  version: 8
                   run_install: true
             - name: Lint code
               run: cd legacy-app && pnpm run lint
@@ -74,7 +74,7 @@ jobs:
             - name: Install pnpm
               uses: pnpm/action-setup@v2
               with:
-                  version: 7
+                  version: 8
                   run_install: true
             - name: Check typecheck
               run: cd legacy-app && pnpm run typecheck
