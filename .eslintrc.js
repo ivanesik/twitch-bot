@@ -52,6 +52,8 @@ module.exports = {
                     '/.*constants//',
                     '/.*types//',
                     '/.*utilities//',
+                    '/.*pages//',
+                    '/(.*components/)|(.*context/)/',
                     '/@//',
                     'parent',
                     'sibling',
