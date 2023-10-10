@@ -24,7 +24,13 @@ export class AppModule {
                         new transports.Console({
                             format: format.combine(
                                 format.simple(),
-                                format.colorize({all: true}),
+                                format.colorize({
+                                    all: true,
+                                    colors: {
+                                        info: 'white',
+                                        success: 'green',
+                                    },
+                                }),
                             ),
                         }),
                         new DailyRotateFile({
@@ -35,6 +41,16 @@ export class AppModule {
                             maxFiles: '20d',
                         }),
                     ],
+                    levels: {
+                        error: 0,
+                        warn: 1,
+                        info: 2,
+                        http: 3,
+                        verbose: 4,
+                        debug: 5,
+                        silly: 6,
+                        success: 7,
+                    },
                 }),
             ],
             providers: [

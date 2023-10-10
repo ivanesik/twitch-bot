@@ -1,4 +1,4 @@
-import {render} from 'solid-js/web';
+import {hydrate} from 'solid-js/web';
 
 import {App} from './App';
 
@@ -10,5 +10,5 @@ import('solid-devtools');
 // }
 
 if (rootElement) {
-    render(() => <App />, rootElement);
+    hydrate(() => <App />, rootElement);
 }

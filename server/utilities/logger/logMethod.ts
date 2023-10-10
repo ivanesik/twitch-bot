@@ -26,7 +26,7 @@ export function logMethod(options?: IOptions) {
             throw new TypeError('logAction can only decorate functions');
         }
 
-        descriptor.value = function (...args: unknown[]): void | Promise<void> {
+        descriptor.value = async function (...args: unknown[]): Promise<void> {
             const logger: LoggerService = (this as ITargetWithLogger).logger;
 
             logger?.log(
@@ -36,7 +36,7 @@ export function logMethod(options?: IOptions) {
             );
 
             try {
-                const result = originalFn.call(this, ...args);
+                const result = await originalFn.call(this, ...args);
 
                 if (!options?.onlyStart) {
                     logger?.warn(`${prefix} Action success`);

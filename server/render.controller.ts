@@ -1,12 +1,6 @@
-import {
-    Get,
-    Req,
-    Inject,
-    Request,
-    Controller,
-    LoggerService,
-} from '@nestjs/common';
+import {Request} from 'express';
 import {WINSTON_MODULE_NEST_PROVIDER} from 'nest-winston';
+import {Get, Req, Inject, Controller, LoggerService} from '@nestjs/common';
 
 import {logMethod} from './utilities/logger/logMethod';
 
@@ -22,7 +16,8 @@ export class RenderController {
 
     @Get('*')
     @logMethod()
+    // TODO LOG REQUEST URL
     async getWildcard(@Req() request: Request): Promise<string> {
-        return this.appService.getAppString(request.url);
+        return this.appService.getAppString(request);
     }
 }

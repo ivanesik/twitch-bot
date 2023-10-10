@@ -52,6 +52,7 @@ module.exports = {
                     '/.*constants//',
                     '/.*types//',
                     '/.*utilities//',
+                    '/@//',
                     'parent',
                     'sibling',
                     'index',
