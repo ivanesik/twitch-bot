@@ -4,7 +4,7 @@ import {HttpService} from '@nestjs/axios';
 import {ITwitchUser} from '@/common/types/dto/ITwitchUser';
 import type {ITwitchValidateTokenResponse} from './types/ITwitchValidateTokenResponse';
 
-export interface ITwitchHttpClient {
+interface ITwitchHttpClient {
     validateAccessToken: (accessToken: string) => Promise<ITwitchUser | void>;
 }
 

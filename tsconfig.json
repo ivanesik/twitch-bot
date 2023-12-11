@@ -23,11 +23,13 @@
         }
     },
     "include": [
-        "./vite.config.ts",
-        "./tailwind.config.ts",
-        "postcss.config.ts",
         "common",
         "server",
-        "client"
+        "client",
+
+        "vite.config.mts",
+        "tailwind.config.ts",
+        "postcss.config.ts",
+        "knip.ts"
     ]
 }
