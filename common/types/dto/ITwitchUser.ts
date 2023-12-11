@@ -10,5 +10,3 @@ export interface ITwitchUser {
     twitchLogin: string;
     twitchScopes: ETwitchPermission[];
 }
-
-export interface IUserInfo extends Omit<ITwitchUser, 'twitchToken'> {}

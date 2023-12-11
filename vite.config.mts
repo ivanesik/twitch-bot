@@ -1,10 +1,9 @@
 import path from 'node:path';
 import {defineConfig} from 'vite';
 import solidPlugin from 'vite-plugin-solid';
+import devtools from 'solid-devtools/vite';
 
 export default async () => {
-    const {default: devtools} = await import('solid-devtools/vite');
-
     return defineConfig({
         build: {
             outDir: 'dist/server',
