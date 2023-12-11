@@ -5,6 +5,9 @@
 /dist
 /node_modules
 
+# runtime
+/storage
+
 # Logs
 logs
 *.log

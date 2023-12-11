@@ -1,19 +1,22 @@
 import type {Request} from 'express';
 import {Store} from 'solid-js/store';
-import {Router} from '@solidjs/router';
+import {ModuleRef} from '@nestjs/core';
 import {LoggerService} from '@nestjs/common';
 import {renderToStringAsync} from 'solid-js/web';
+import {Router} from '@solidjs/router';
 
-import {ICommonStore} from '@/types/store/ICommonStore';
+import {ICommonStore} from '@/common/types/store/ICommonStore';
 
 import {OriginContext} from './context/OriginContext';
 import {CommonInfoContext} from './context/CommonInfoContext';
+import {ServerFetchContext} from './context/ServerFetchContext';
 
 import {App} from './App';
 
 export async function render(
     request: Request,
     logger: LoggerService,
+    moduleRef: ModuleRef,
     store: Store<ICommonStore>,
 ) {
     const {
@@ -26,9 +29,11 @@ export async function render(
     const appString = await renderToStringAsync(() => (
         <OriginContext.Provider value={origin}>
             <CommonInfoContext.Provider value={store}>
-                <Router url={url}>
-                    <App />
-                </Router>
+                <ServerFetchContext.Provider value={{request, moduleRef}}>
+                    <Router url={url}>
+                        <App />
+                    </Router>
+                </ServerFetchContext.Provider>
             </CommonInfoContext.Provider>
         </OriginContext.Provider>
     ));

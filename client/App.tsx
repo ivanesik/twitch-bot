@@ -1,9 +1,11 @@
 import {Component, ErrorBoundary} from 'solid-js';
-import {Routes, Route} from '@solidjs/router';
+import {Route, Routes} from '@solidjs/router';
 
 import {pageUrls} from './constants/pageUrls';
 
 import {WelcomePage} from './pages/Welcome/WelcomePage';
+import {AuthorizePage} from './pages/Authorize/AuthorizePage';
+
 import './App.css';
 
 export const App: Component = () => {
@@ -18,6 +20,10 @@ export const App: Component = () => {
         >
             <Routes>
                 <Route path={pageUrls.welcomePath} component={WelcomePage} />
+                <Route
+                    path={pageUrls.authorizePath}
+                    component={AuthorizePage}
+                />
 
                 <Route path="*" element={<span>404</span>} />
             </Routes>
