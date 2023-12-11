@@ -4,11 +4,14 @@ import {ConfigModule} from '@nestjs/config';
 import {WinstonModule} from 'nest-winston';
 import {transports, format} from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+import {HttpModule} from '@nestjs/axios';
 
 import {APP_MODULE_OPTIONS} from './constants/modules';
 
 import {RenderController} from './render.controller';
+import {HttpApiController} from './httpApi.controller';
 import {RenderService} from './services/render.service';
+import {TwitchHttpClient} from './services/twitchHttpClient.service';
 
 export interface IAppModuleOptions {
     viteServer: ViteDevServer;
@@ -20,6 +23,7 @@ export class AppModule {
         return {
             module: AppModule,
             imports: [
+                HttpModule,
                 ConfigModule.forRoot(),
                 WinstonModule.forRoot({
                     transports: [
@@ -51,8 +55,9 @@ export class AppModule {
                     useValue: options,
                 },
                 RenderService,
+                TwitchHttpClient,
             ],
-            controllers: [RenderController],
+            controllers: [HttpApiController, RenderController],
             exports: [RenderService],
         };
     }

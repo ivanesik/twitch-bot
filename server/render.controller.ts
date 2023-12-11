@@ -16,7 +16,6 @@ export class RenderController {
 
     @Get('*')
     @logMethod()
-    // TODO LOG REQUEST URL
     async getWildcard(@Req() request: Request): Promise<string> {
         return this.appService.getAppString(request);
     }

@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import {Request} from 'express';
 import {ViteDevServer} from 'vite';
+import {ModuleRef} from '@nestjs/core';
 import {createStore} from 'solid-js/store';
 import {ConfigService} from '@nestjs/config';
 import {generateHydrationScript} from 'solid-js/web';
@@ -10,7 +11,7 @@ import {Inject, Injectable, LoggerService} from '@nestjs/common';
 
 import {APP_MODULE_OPTIONS} from '@/server/constants/modules';
 
-import {ICommonStore} from '@/types/store/ICommonStore';
+import {ICommonStore} from '@/common/types/store/ICommonStore';
 
 import {TRenderFunction} from '@/client/server.entry';
 
@@ -27,6 +28,7 @@ export class RenderService {
         @Inject(APP_MODULE_OPTIONS) options: IAppModuleOptions,
         @Inject(WINSTON_MODULE_NEST_PROVIDER)
         private readonly logger: LoggerService,
+        private readonly moduleRef: ModuleRef,
         private readonly configService: ConfigService,
     ) {
         this.vite = options.viteServer;
@@ -49,7 +51,12 @@ export class RenderService {
         const [store] = createStore<ICommonStore>({
             clientId,
         });
-        const appHtml = await render(request, this.logger, store);
+        const appHtml = await render(
+            request,
+            this.logger,
+            this.moduleRef,
+            store,
+        );
         const serverState: typeof window._SERVER_STATE_ = {
             commonStore: store,
         };

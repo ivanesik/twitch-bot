@@ -23,10 +23,10 @@
         }
     },
     "include": [
-        "types",
         "./vite.config.ts",
         "./tailwind.config.ts",
         "postcss.config.ts",
+        "common",
         "server",
         "client"
     ]

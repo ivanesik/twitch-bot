@@ -19,6 +19,7 @@
 
 ## Minds
 
+-   Twitch API: https://twurple.js.org/docs/auth/
 -   SteamLabs - https://cdn.streamlabs.com/chatbot/Documentation_Youtube.pdf
 -   DB:
     -   https://supabase.com/

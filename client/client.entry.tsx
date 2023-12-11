@@ -2,10 +2,11 @@ import {hydrate} from 'solid-js/web';
 import {Router} from '@solidjs/router';
 import {createStore} from 'solid-js/store';
 
-import {ICommonStore} from '@/types/store/ICommonStore';
+import {ICommonStore} from '@/common/types/store/ICommonStore';
 
 import {OriginContext} from './context/OriginContext';
 import {CommonInfoContext} from './context/CommonInfoContext';
+import {ServerFetchContext} from './context/ServerFetchContext';
 
 import {App} from './App';
 
@@ -23,9 +24,11 @@ if (rootElement) {
         () => (
             <OriginContext.Provider value={location.origin}>
                 <CommonInfoContext.Provider value={store}>
-                    <Router>
-                        <App />
-                    </Router>
+                    <ServerFetchContext.Provider value={undefined}>
+                        <Router>
+                            <App />
+                        </Router>
+                    </ServerFetchContext.Provider>
                 </CommonInfoContext.Provider>
             </OriginContext.Provider>
         ),

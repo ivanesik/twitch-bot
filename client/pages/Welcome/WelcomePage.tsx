@@ -2,7 +2,7 @@ import {type Component, createMemo, useContext} from 'solid-js';
 
 import {appName} from '@/client/constants/common';
 import {pageUrls} from '@/client/constants/pageUrls';
-import {ETwitchPermission} from '@/constants/twitch';
+import {ETwitchPermission} from '@/common/constants/twitch';
 
 import {OriginContext} from '@/client/context/OriginContext';
 import {useClientId} from '@/client/context/CommonInfoContext';
