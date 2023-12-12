@@ -2,11 +2,8 @@ import {Injectable} from '@nestjs/common';
 import {HttpService} from '@nestjs/axios';
 
 import {ITwitchUser} from '@/common/types/dto/ITwitchUser';
+import {ITwitchHttpClient} from '@/common/types/api/ITwitchHttpClient';
 import type {ITwitchValidateTokenResponse} from './types/ITwitchValidateTokenResponse';
-
-interface ITwitchHttpClient {
-    validateAccessToken: (accessToken: string) => Promise<ITwitchUser | void>;
-}
 
 @Injectable()
 export class TwitchHttpClient implements ITwitchHttpClient {
