@@ -1,17 +1,21 @@
-import {Controller, Post, Body} from '@nestjs/common';
+import {Controller, Post, Body, Inject} from '@nestjs/common';
 
 import {saveTokenApi} from '@/common/constants/httpApiPath';
 import {saveTokenErrorByStatus} from './constants/errorMessagesByStatus';
 
-import {IApiService} from '@/common/types/api/IApiService';
+import {ITwitchHttpClient} from '@/common/types/api/ITwitchHttpClient';
+import {EServiceProviderKey} from '@/common/types/api/EServiceProviderKey';
 
 import {handleAxiosError} from './utilities/handleAxiosError';
 
-import {TwitchHttpClient} from './services/twitchHttpClient.service';
-
 @Controller('api')
-export class HttpApiController implements IApiService {
-    constructor(private readonly twitchHttpClient: TwitchHttpClient) {
+export class HttpApiController {
+    twitchHttpClient: ITwitchHttpClient;
+
+    constructor(
+        @Inject(EServiceProviderKey.TWITCH_HTTP_CLIENT)
+        twitchHttpClient: ITwitchHttpClient,
+    ) {
         this.twitchHttpClient = twitchHttpClient;
     }
 

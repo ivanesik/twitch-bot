@@ -8,6 +8,8 @@ import {HttpModule} from '@nestjs/axios';
 
 import {APP_MODULE_OPTIONS} from './constants/modules';
 
+import {EServiceProviderKey} from '@/common/types/api/EServiceProviderKey';
+
 import {RenderController} from './render.controller';
 import {HttpApiController} from './httpApi.controller';
 import {RenderService} from './services/render.service';
@@ -55,7 +57,10 @@ export class AppModule {
                     useValue: options,
                 },
                 RenderService,
-                TwitchHttpClient,
+                {
+                    provide: EServiceProviderKey.TWITCH_HTTP_CLIENT,
+                    useClass: TwitchHttpClient,
+                },
             ],
             controllers: [HttpApiController, RenderController],
             exports: [RenderService],

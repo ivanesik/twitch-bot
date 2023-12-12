@@ -3,9 +3,9 @@ import axios, {AxiosInstance} from 'axios';
 import {saveTokenApi} from '@/common/constants/httpApiPath';
 
 import {ITwitchUser} from '@/common/types/dto/ITwitchUser';
-import {IApiService} from '@/common/types/api/IApiService';
+import {ITwitchHttpClient} from '@/common/types/api/ITwitchHttpClient';
 
-class HttpApiClient implements IApiService {
+export class TwitchBrowserProvider implements ITwitchHttpClient {
     private axiosInstance: AxiosInstance;
 
     constructor() {
@@ -14,7 +14,7 @@ class HttpApiClient implements IApiService {
         });
     }
 
-    public async saveToken(accessToken: string) {
+    public async validateAccessToken(accessToken: string) {
         const {data} = await this.axiosInstance.post<ITwitchUser>(
             saveTokenApi,
             {accessToken},
@@ -23,5 +23,3 @@ class HttpApiClient implements IApiService {
         return data;
     }
 }
-
-export const httpApiClient = new HttpApiClient();

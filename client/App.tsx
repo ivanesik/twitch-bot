@@ -12,9 +12,11 @@ export const App: Component = () => {
     return (
         <ErrorBoundary
             fallback={err => (
-                <div>
-                    <h1>App is broken</h1>
-                    <code>{JSON.stringify(err, null, 2)}</code>
+                <div class="p-8">
+                    <h1 class="text-4xl mb-4">App is broken</h1>
+                    <code>
+                        {err instanceof Error ? err.message : err?.toString?.()}
+                    </code>
                 </div>
             )}
         >
