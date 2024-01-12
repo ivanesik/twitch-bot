@@ -63,7 +63,6 @@ export class AppModule {
                 },
             ],
             controllers: [HttpApiController, RenderController],
-            exports: [RenderService],
         };
     }
 }

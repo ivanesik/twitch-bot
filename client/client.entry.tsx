@@ -1,3 +1,4 @@
+import {DEV} from 'solid-js';
 import {hydrate} from 'solid-js/web';
 import {Router} from '@solidjs/router';
 import {createStore} from 'solid-js/store';
@@ -14,10 +15,9 @@ const rootElement = document.getElementById('root');
 const {commonStore} = self._SERVER_STATE_;
 const [store] = createStore<ICommonStore>(commonStore);
 
-// TODO: check dev. isDev from 'solid-js/web' doents works
-// if (isDev) {
-import('solid-devtools');
-// }
+if (DEV) {
+    import('solid-devtools');
+}
 
 if (rootElement) {
     hydrate(
