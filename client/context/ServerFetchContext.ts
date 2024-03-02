@@ -1,9 +1,10 @@
 import {ModuleRef} from '@nestjs/core';
-import type {Request} from 'express';
 import {createContext} from 'solid-js';
 
+import type {IAppRequest} from '@/server/types/IAppRequest';
+
 export interface IServerFetchData {
-    request: Request;
+    request: IAppRequest;
     moduleRef: ModuleRef;
 }
 

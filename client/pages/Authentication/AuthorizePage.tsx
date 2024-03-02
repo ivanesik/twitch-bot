@@ -20,7 +20,7 @@ interface IHashSearchParams {
  *
  * http://localhost:3000/authorize#access_token=1zoghhm4qftf3n9u5iw14fi2tkun8h&scope=channel%3Aread%3Aredemptions&token_type=bearer
  */
-export const AuthorizePage: Component = () => {
+export const AuthenticationPage: Component = () => {
     const twitchService = useService(twitchServiceProvider);
 
     createEffect(async () => {

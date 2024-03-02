@@ -1,5 +1,10 @@
 import {ViteDevServer} from 'vite';
-import {DynamicModule, Module} from '@nestjs/common';
+import {
+    DynamicModule,
+    MiddlewareConsumer,
+    Module,
+    NestModule,
+} from '@nestjs/common';
 import {ConfigModule} from '@nestjs/config';
 import {WinstonModule} from 'nest-winston';
 import {transports, format} from 'winston';
@@ -14,13 +19,14 @@ import {RenderController} from './render.controller';
 import {HttpApiController} from './httpApi.controller';
 import {RenderService} from './services/render.service';
 import {TwitchHttpClient} from './services/twitchHttpClient.service';
+import {SupabaseMiddleware} from './middleware/supabase.middleware';
 
 export interface IAppModuleOptions {
     viteServer: ViteDevServer;
 }
 
 @Module({})
-export class AppModule {
+export class AppModule implements NestModule {
     static register(options: IAppModuleOptions): DynamicModule {
         return {
             module: AppModule,
@@ -63,7 +69,10 @@ export class AppModule {
                 },
             ],
             controllers: [HttpApiController, RenderController],
-            exports: [RenderService],
         };
+    }
+
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(SupabaseMiddleware).forRoutes('*');
     }
 }
