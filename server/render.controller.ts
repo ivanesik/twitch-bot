@@ -1,6 +1,7 @@
-import {Request} from 'express';
 import {WINSTON_MODULE_NEST_PROVIDER} from 'nest-winston';
 import {Get, Req, Inject, Controller, LoggerService} from '@nestjs/common';
+
+import {IAppRequest} from './types/IAppRequest';
 
 import {logMethod} from './utilities/logger/logMethod';
 
@@ -16,7 +17,7 @@ export class RenderController {
 
     @Get('*')
     @logMethod()
-    async getWildcard(@Req() request: Request): Promise<string> {
+    async getWildcard(@Req() request: IAppRequest): Promise<string> {
         return this.appService.getAppString(request);
     }
 }

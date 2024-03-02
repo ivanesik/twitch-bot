@@ -1,6 +1,5 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import {Request} from 'express';
 import {ViteDevServer} from 'vite';
 import {ModuleRef} from '@nestjs/core';
 import {createStore} from 'solid-js/store';
@@ -11,6 +10,7 @@ import {Inject, Injectable, LoggerService} from '@nestjs/common';
 
 import {APP_MODULE_OPTIONS} from '@/server/constants/modules';
 
+import {IAppRequest} from '@/server/types/IAppRequest';
 import {ICommonStore} from '@/common/types/store/ICommonStore';
 
 import {TRenderFunction} from '@/client/server.entry';
@@ -38,7 +38,7 @@ export class RenderService {
         );
     }
 
-    async getAppString(request: Request): Promise<string> {
+    async getAppString(request: IAppRequest): Promise<string> {
         const clientId = this.configService.get<string>('TWITCH_CLIENT_ID');
         const render: TRenderFunction = (
             await this.vite.ssrLoadModule('/client/server.entry.tsx')
@@ -51,14 +51,19 @@ export class RenderService {
         const [store] = createStore<ICommonStore>({
             clientId,
         });
-        const appHtml = await render(
+        const appHtml = await render({
             request,
-            this.logger,
-            this.moduleRef,
-            store,
-        );
+            logger: this.logger,
+            moduleRef: this.moduleRef,
+            store: store,
+            supabaseClient: request.supabase.client,
+        });
         const serverState: typeof window._SERVER_STATE_ = {
             commonStore: store,
+            supabase: {
+                url: request.supabase.options.url,
+                apiKey: request.supabase.options.apiKey,
+            },
         };
 
         const html = this.template
