@@ -44,19 +44,19 @@ To generate a template string file based on rating:
 }
 ```
 
-## Oposite rewards
+## Opposite rewards
 
 To configure the behavior when one reward lowers the rating of a user in another reward (or the same), you need to:
 
-1. Сreate the file `rewardRatings/config.json` if it doesn't already exist
-2. Add oposite rewards identifier
+1. Create the file `rewardRatings/config.json` if it doesn't already exist
+2. Add opposite rewards identifier
 
 ```json
 {
-    "opositeRewards": [
+    "oppositeRewards": [
         {
             "targetRewardId": "d8ce697a-9c06-457a-b0e4-974849153562",
-            "opositeRewardId": "9f6af828-9337-4733-97da-1576f5f9e5f1"
+            "oppositeRewardId": "9f6af828-9337-4733-97da-1576f5f9e5f1"
         }
     ]
 }

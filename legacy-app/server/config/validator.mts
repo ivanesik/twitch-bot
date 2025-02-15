@@ -26,10 +26,10 @@ const templatesInfoSchema = zod.record(templateInfoSchema);
 
 export const oppositeRewardsSchema = zod.object({
     targetRewardId: zod.string(),
-    opositeRewardId: zod.string(),
+    oppositeRewardId: zod.string(),
 });
 
 export const configSchema = zod.object({
     templates: templatesInfoSchema.optional(),
-    opositeRewards: zod.array(oppositeRewardsSchema).optional(),
+    oppositeRewards: zod.array(oppositeRewardsSchema).optional(),
 });

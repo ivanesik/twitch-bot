@@ -10,7 +10,7 @@ import {builtTwitchAccessUrl} from 'utilities/builtTwitchAccessUrl.mjs';
 import {writeLastRewardedUser} from 'utilities/writeLastRewardedUser.mjs';
 import {writeRewardRatingJSON} from 'utilities/writeRewardRatingJSON.mjs';
 import {writeRewardRatingInTemplate} from 'utilities/writeRewardRatingInTemplate.mjs';
-import {writeOppositeRewardRatingJSON} from 'utilities/writeOpositeRewardRatingJSON.mjs';
+import {writeOppositeRewardRatingJSON} from 'utilities/writeOppositeRewardRatingJSON.mjs';
 
 import {config} from '../config/index.mjs';
 import {Logger} from '../logger/logger.mjs';
@@ -167,13 +167,13 @@ export class TwitchSocketClient {
                         const rewardRedemption = rewardData.data.redemption;
                         const reward = rewardRedemption.reward;
 
-                        const oppositeReward = config.opositeRewards?.find(
+                        const oppositeReward = config.oppositeRewards?.find(
                             ({targetRewardId}) => targetRewardId === reward.id,
                         );
 
                         const rewardTemplates = config.templates?.[reward.id];
-                        const opositeRewardTemplates = oppositeReward
-                            ? config.templates?.[oppositeReward.opositeRewardId]
+                        const oppositeRewardTemplates = oppositeReward
+                            ? config.templates?.[oppositeReward.oppositeRewardId]
                             : undefined;
 
                         const rewardFilesInfo: IRewardFilesInfo = {
@@ -188,19 +188,19 @@ export class TwitchSocketClient {
                         };
 
                         const oppositeRewardFilesInfo: IRewardFilesInfo | undefined =
-                            oppositeReward?.opositeRewardId
+                            oppositeReward?.oppositeRewardId
                                 ? {
-                                      rewardRatingFileName: `${oppositeReward?.opositeRewardId}.json`,
-                                      templateRewardRatingFileName: `${oppositeReward?.opositeRewardId}.txt`,
-                                      template: opositeRewardTemplates?.normal,
+                                      rewardRatingFileName: `${oppositeReward?.oppositeRewardId}.json`,
+                                      templateRewardRatingFileName: `${oppositeReward?.oppositeRewardId}.txt`,
+                                      template: oppositeRewardTemplates?.normal,
                                   }
                                 : undefined;
                         const oppositeAntiRewardFilesInfo: IRewardFilesInfo | undefined =
-                            oppositeReward?.opositeRewardId
+                            oppositeReward?.oppositeRewardId
                                 ? {
-                                      rewardRatingFileName: `${oppositeReward?.opositeRewardId}.json`,
-                                      templateRewardRatingFileName: `${oppositeReward?.opositeRewardId}.txt`,
-                                      template: opositeRewardTemplates?.reverse,
+                                      rewardRatingFileName: `${oppositeReward?.oppositeRewardId}.json`,
+                                      templateRewardRatingFileName: `${oppositeReward?.oppositeRewardId}.txt`,
+                                      template: oppositeRewardTemplates?.reverse,
                                   }
                                 : undefined;
 
