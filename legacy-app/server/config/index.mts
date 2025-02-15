@@ -5,13 +5,13 @@ import {FileHelper} from '../file/FileHelper.mjs';
 import {
     configSchema,
     templateSchema,
-    opositeRewardsSchema,
+    oppositeRewardsSchema,
     templateInfoSchema,
 } from './validator.mjs';
 
 export type TRewardTemplate = ZodInfer<typeof templateSchema>;
 export type TRewardTemplateInfo = ZodInfer<typeof templateInfoSchema>;
-export type TOpositeRewardInfo = ZodInfer<typeof opositeRewardsSchema>;
+export type TOppositeRewardInfo = ZodInfer<typeof oppositeRewardsSchema>;
 export type TRewardRatingConfig = ZodInfer<typeof configSchema>;
 
 const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile(process.cwd(), 'config.json');

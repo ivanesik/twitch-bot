@@ -2,7 +2,7 @@ import type {ITwitchUser} from 'types/twitch/ITwitchUser.mjs';
 import type {ITwitchRewardRedemption} from 'types/twitch/TTwitchMessageData.mjs';
 import type {IRewardRatingsInfo} from 'types/rewardsStorage/IRewardRatingsInfo.mjs';
 
-import type {TOpositeRewardInfo} from '../config/index.mjs';
+import type {TOppositeRewardInfo} from '../config/index.mjs';
 import type {TwitchHttpClient} from '../api/TwitchHttpClient.mjs';
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
@@ -11,10 +11,10 @@ import {prepareUserName} from './prepareUserName.mjs';
 import {updateRewardRating} from './updateRewardRating.mjs';
 import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 
-export async function writeOpositeRewardRatingJSON(
+export async function writeOppositeRewardRatingJSON(
     directory: string,
     fileName: string,
-    opositeReward: TOpositeRewardInfo,
+    oppositeReward: TOppositeRewardInfo,
     twitchClient: TwitchHttpClient,
     rewardRedemption: ITwitchRewardRedemption,
 ): Promise<void> {
@@ -23,7 +23,7 @@ export async function writeOpositeRewardRatingJSON(
     try {
         const userNameFromInput = prepareUserName(rewardRedemption.user_input);
 
-        if (opositeReward && userNameFromInput) {
+        if (oppositeReward && userNameFromInput) {
             const user = await twitchClient.getUserByLogin(userNameFromInput);
             const fakeUser: ITwitchUser = {
                 id: `unknown-${userNameFromInput}`,
@@ -46,7 +46,7 @@ export async function writeOpositeRewardRatingJSON(
         }
     } catch (err) {
         Logger.error(
-            `Handle: Error while write oposite reward rating ${reward.title} from ${rewardRedemption.user.display_name} to decrease ${rewardRedemption.user_input}`,
+            `Handle: Error while write opposite reward rating ${reward.title} from ${rewardRedemption.user.display_name} to decrease ${rewardRedemption.user_input}`,
 
             buildErrorFromUnknown(err),
         );

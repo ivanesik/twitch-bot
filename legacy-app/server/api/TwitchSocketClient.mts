@@ -10,7 +10,7 @@ import {builtTwitchAccessUrl} from 'utilities/builtTwitchAccessUrl.mjs';
 import {writeLastRewardedUser} from 'utilities/writeLastRewardedUser.mjs';
 import {writeRewardRatingJSON} from 'utilities/writeRewardRatingJSON.mjs';
 import {writeRewardRatingInTemplate} from 'utilities/writeRewardRatingInTemplate.mjs';
-import {writeOpositeRewardRatingJSON} from 'utilities/writeOpositeRewardRatingJSON.mjs';
+import {writeOppositeRewardRatingJSON} from 'utilities/writeOpositeRewardRatingJSON.mjs';
 
 import {config} from '../config/index.mjs';
 import {Logger} from '../logger/logger.mjs';
@@ -33,7 +33,7 @@ export class TwitchSocketClient {
     private twitchClient: TwitchHttpClient;
     private websocket?: WebSocket;
     private heartbeatTimer?: NodeJS.Timer;
-    private pingTimeountTimer?: NodeJS.Timer;
+    private pingTimeoutTimer?: NodeJS.Timer;
 
     constructor(
         private userId: string,
@@ -62,7 +62,7 @@ export class TwitchSocketClient {
     @logAction('Cleanup')
     private cleanup(): void {
         clearInterval(this.heartbeatTimer);
-        clearTimeout(this.pingTimeountTimer);
+        clearTimeout(this.pingTimeoutTimer);
     }
 
     @logAction('Subscribe', {onlyStart: true, withArgs: true})
@@ -82,7 +82,7 @@ export class TwitchSocketClient {
     private sendPing(): void {
         this.websocket?.send(PING_MESSAGE);
 
-        this.pingTimeountTimer = setTimeout(() => {
+        this.pingTimeoutTimer = setTimeout(() => {
             this.stop();
         }, 10 * SECOND);
     }
@@ -151,7 +151,7 @@ export class TwitchSocketClient {
                 break;
             }
             case 'PONG': {
-                clearTimeout(this.pingTimeountTimer);
+                clearTimeout(this.pingTimeoutTimer);
                 break;
             }
             case 'MESSAGE': {
@@ -167,13 +167,13 @@ export class TwitchSocketClient {
                         const rewardRedemption = rewardData.data.redemption;
                         const reward = rewardRedemption.reward;
 
-                        const opositeReward = config.opositeRewards?.find(
+                        const oppositeReward = config.opositeRewards?.find(
                             ({targetRewardId}) => targetRewardId === reward.id,
                         );
 
                         const rewardTemplates = config.templates?.[reward.id];
-                        const opositeRewardTemplates = opositeReward
-                            ? config.templates?.[opositeReward.opositeRewardId]
+                        const opositeRewardTemplates = oppositeReward
+                            ? config.templates?.[oppositeReward.opositeRewardId]
                             : undefined;
 
                         const rewardFilesInfo: IRewardFilesInfo = {
@@ -187,19 +187,19 @@ export class TwitchSocketClient {
                             template: rewardTemplates?.reverse,
                         };
 
-                        const opositeRewardFilesInfo: IRewardFilesInfo | undefined =
-                            opositeReward?.opositeRewardId
+                        const oppositeRewardFilesInfo: IRewardFilesInfo | undefined =
+                            oppositeReward?.opositeRewardId
                                 ? {
-                                      rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
-                                      templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
+                                      rewardRatingFileName: `${oppositeReward?.opositeRewardId}.json`,
+                                      templateRewardRatingFileName: `${oppositeReward?.opositeRewardId}.txt`,
                                       template: opositeRewardTemplates?.normal,
                                   }
                                 : undefined;
-                        const opositeAntiRewardFilesInfo: IRewardFilesInfo | undefined =
-                            opositeReward?.opositeRewardId
+                        const oppositeAntiRewardFilesInfo: IRewardFilesInfo | undefined =
+                            oppositeReward?.opositeRewardId
                                 ? {
-                                      rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
-                                      templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
+                                      rewardRatingFileName: `${oppositeReward?.opositeRewardId}.json`,
+                                      templateRewardRatingFileName: `${oppositeReward?.opositeRewardId}.txt`,
                                       template: opositeRewardTemplates?.reverse,
                                   }
                                 : undefined;
@@ -215,11 +215,11 @@ export class TwitchSocketClient {
                             rewardRedemption,
                         );
 
-                        if (opositeRewardFilesInfo && opositeReward) {
-                            await writeOpositeRewardRatingJSON(
+                        if (oppositeRewardFilesInfo && oppositeReward) {
+                            await writeOppositeRewardRatingJSON(
                                 REWARD_RATINGS_DIRECTORY,
-                                opositeRewardFilesInfo.rewardRatingFileName,
-                                opositeReward,
+                                oppositeRewardFilesInfo.rewardRatingFileName,
+                                oppositeReward,
                                 this.twitchClient,
                                 rewardRedemption,
                             );
@@ -241,22 +241,22 @@ export class TwitchSocketClient {
                             true,
                         );
 
-                        if (opositeRewardFilesInfo) {
+                        if (oppositeRewardFilesInfo) {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
                                 TEMPLATED_RATINGS_DIRECTORY,
                                 rewardRedemption,
-                                opositeRewardFilesInfo,
+                                oppositeRewardFilesInfo,
                                 false,
                             );
                         }
 
-                        if (opositeAntiRewardFilesInfo) {
+                        if (oppositeAntiRewardFilesInfo) {
                             writeRewardRatingInTemplate(
                                 REWARD_RATINGS_DIRECTORY,
                                 TEMPLATED_ANTI_RATINGS_DIRECTORY,
                                 rewardRedemption,
-                                opositeAntiRewardFilesInfo,
+                                oppositeAntiRewardFilesInfo,
                                 true,
                             );
                         }

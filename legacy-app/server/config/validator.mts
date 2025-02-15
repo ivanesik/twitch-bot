@@ -24,12 +24,12 @@ export const templateInfoSchema = zod.object({
 
 const templatesInfoSchema = zod.record(templateInfoSchema);
 
-export const opositeRewardsSchema = zod.object({
+export const oppositeRewardsSchema = zod.object({
     targetRewardId: zod.string(),
     opositeRewardId: zod.string(),
 });
 
 export const configSchema = zod.object({
     templates: templatesInfoSchema.optional(),
-    opositeRewards: zod.array(opositeRewardsSchema).optional(),
+    opositeRewards: zod.array(oppositeRewardsSchema).optional(),
 });
