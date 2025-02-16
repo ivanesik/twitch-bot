@@ -5,6 +5,7 @@ import {stdin, stdout} from 'node:process';
 import {Logger} from './logger/logger.mjs';
 import {TwitchHttpClient} from './api/TwitchHttpClient.mjs';
 import {TwitchSocketClient} from './api/TwitchSocketClient.mjs';
+import {builtTwitchAccessUrl} from 'utilities/builtTwitchAccessUrl.mjs';
 
 dotenv.config(process.env.ENV_FILE ? {path: process.env.ENV_FILE} : undefined);
 const rl = readline.createInterface({input: stdin, output: stdout});
@@ -47,6 +48,7 @@ async function start(clientId: string, clientAccessToken: string): Promise<void>
         });
     } else {
         Logger.error("Access token isn't valid");
+        Logger.error(`Go to ${builtTwitchAccessUrl(clientId)} for app access`);
 
         rl.question('Press Enter to exit', (): void => {
             rl.close();

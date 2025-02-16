@@ -1,124 +1,128 @@
-import type {THexColor} from '../common.mjs';
-
-import type {ITwitchUser} from './ITwitchUser.mjs';
-import type {ITwitchRewardImage} from './ITwitchImage.mjs';
+import type {TwitchEventSubTopic} from 'constants/eventSubEvents.mjs';
 
 /** @example '2023-02-24T21:33:07.704059988Z' */
 type TDateLikeType = string;
 
-interface IPongMessageData {
-    type: 'PONG';
-    error: undefined;
-    data: undefined;
+type TEventSubWsSessionStatus = 'connected' | 'reconnecting';
+
+interface ITwitchEventSubMetadata<TEvent extends string> {
+    message_id: string;
+    message_type: TEvent;
+    message_timestamp: TDateLikeType;
 }
 
-/** Received on PubSub Subscribe */
-interface IResponseMessageData {
-    type: 'RESPONSE';
-    error: '';
-    nonce: '';
-    data: undefined;
+interface ITwitchSessionWelcomeMessageData {
+    metadata: ITwitchEventSubMetadata<'session_welcome'>;
+    payload: {
+        session: {
+            id: string;
+            status: TEventSubWsSessionStatus;
+            connected_at: TDateLikeType;
+            keepalive_timeout_seconds: number;
+            reconnect_url: null | string;
+            recovery_url: null | string;
+        };
+    };
 }
 
-/**
- * Clients may receive a RECONNECT message at any time. This indicates that the server is about to
- * restart (typically for maintenance) and will disconnect the client within 30 seconds. During this
- * time, we recommend that clients reconnect to the server; otherwise, the client will be forcibly
- * disconnected.
- */
-interface IReconnectMessageData {
-    type: 'RECONNECT';
-    error: undefined;
-    nonce: undefined;
-    data: undefined;
+interface ITwitchSessionKeepAliveMessageData {
+    metadata: ITwitchEventSubMetadata<'session_keepalive'>;
+    payload: Record<string, never>;
 }
 
-export interface ITwitchReward {
-    id: '3f6701cf-223b-4a78-bf53-3a27d2c3a3e0';
-    channel_id: string;
-    /** @example 'Нелюбимый зритель стрима' */
+interface ITwitchReconnectMessageData {
+    metadata: ITwitchEventSubMetadata<'session_reconnect'>;
+    payload: {
+        session: {
+            id: string;
+            status: 'reconnecting';
+            keepalive_timeout_seconds: null | number;
+            reconnect_url: string;
+            connected_at: TDateLikeType;
+        };
+    };
+}
+
+interface ITwitchReward {
+    id: string;
     title: string;
     prompt: string;
-    /** Cost of reward in channel points */
     cost: number;
-    is_user_input_required: boolean;
-    is_sub_only: boolean;
-    image: ITwitchRewardImage;
-    default_image: ITwitchRewardImage;
-    background_color: THexColor;
-    is_enabled: boolean;
-    is_paused: boolean;
-    is_in_stock: boolean;
-    max_per_stream: {
-        is_enabled: boolean;
-        /** 0 - is unlimited */
-        max_per_stream: number;
-    };
-    should_redemptions_skip_request_queue: boolean;
-    template_id: null;
-    updated_for_indicator_at: TDateLikeType;
-    max_per_user_per_stream: {
-        is_enabled: boolean;
-        /** 0 - is unlimited */
-        max_per_user_per_stream: number;
-    };
-    global_cooldown: {
-        is_enabled: boolean;
-        /** 0 - is unlimited */
-        global_cooldown_seconds: number;
-    };
-    redemptions_redeemed_current_stream: null;
-    cooldown_expires_at: null;
 }
 
-export interface ITwitchRewardRedemption {
-    /** @example '7f639c46-3fa2-4431-9d04-4a982315fa9c' */
+export interface ITwitchNotificationPayloadEvent {
     id: string;
-    user: ITwitchUser;
-    channel_id: string;
+    broadcaster_user_id: string;
+    broadcaster_user_login: string;
+    broadcaster_user_name: string;
+    user_id: string;
+    /** @example ivanesy */
+    user_login: string;
+    /** @example IvanesY */
+    user_name: string;
+    user_input: string;
+    status: 'unfulfilled';
     redeemed_at: TDateLikeType;
     reward: ITwitchReward;
-    /** @example '@tester' */
-    user_input: string;
-    status: 'UNFULFILLED';
 }
 
-export interface IRewardData {
-    type: 'reward-redeemed';
-    data: {
-        timestamp: TDateLikeType;
-        redemption: ITwitchRewardRedemption;
+interface ITwitchNotificationMessageData {
+    metadata: ITwitchEventSubMetadata<'notification'> & {
+        subscription_type: TwitchEventSubTopic;
+        subscription_version: '1';
+    };
+    payload: {
+        subscription: {
+            id: string;
+            status: 'enabled';
+            type: TwitchEventSubTopic;
+            version: '1';
+            condition: {
+                broadcaster_user_id: string;
+                reward_id: string;
+            };
+            transport: {
+                method: 'websocket';
+                session_id: string;
+            };
+            created_at: TDateLikeType;
+            cost: 0;
+        };
+        event: ITwitchNotificationPayloadEvent;
     };
 }
 
-interface IRewardRedeemedMessageData {
-    type: 'MESSAGE';
-    error: undefined;
-    data?: {
-        topic: `channel-points-channel-v1.${number}`;
-        message: string;
-    };
+interface ITwitchUnhandledMessageData {
+    metadata: ITwitchEventSubMetadata<string>;
 }
 
-interface IBadAuthErrorMessageData {
-    type: 'RESPONSE';
-    error: 'ERR_BADAUTH';
-    nonce: '';
-    data: undefined;
+export type TTwitchEventSubMessageData =
+    | ITwitchSessionWelcomeMessageData
+    | ITwitchSessionKeepAliveMessageData
+    | ITwitchReconnectMessageData
+    | ITwitchNotificationMessageData
+    | ITwitchUnhandledMessageData;
+
+export function isTwitchSessionWelcomeMessage(
+    event: TTwitchEventSubMessageData,
+): event is ITwitchSessionWelcomeMessageData {
+    return event.metadata.message_type === 'session_welcome';
 }
 
-interface IUnknownErrorMessageData {
-    type: 'RESPONSE';
-    error: string;
-    nonce: '';
-    data: undefined;
+export function isTwitchSessionKeepAliveMessage(
+    event: TTwitchEventSubMessageData,
+): event is ITwitchSessionKeepAliveMessageData {
+    return event.metadata.message_type === 'session_keepalive';
 }
 
-type TErrorMessageData = IBadAuthErrorMessageData | IUnknownErrorMessageData;
+export function isTwitchReconnectMessage(
+    event: TTwitchEventSubMessageData,
+): event is ITwitchReconnectMessageData {
+    return event.metadata.message_type === 'session_reconnect';
+}
 
-export type TTwitchMessageData =
-    | IPongMessageData
-    | IResponseMessageData
-    | IReconnectMessageData
-    | IRewardRedeemedMessageData
-    | TErrorMessageData;
+export function isTwitchNotificationMessage(
+    event: TTwitchEventSubMessageData,
+): event is ITwitchNotificationMessageData {
+    return event.metadata.message_type === 'notification';
+}

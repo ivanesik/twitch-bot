@@ -1,4 +1,4 @@
-import type {ITwitchRewardRedemption} from 'types/twitch/TTwitchMessageData.mjs';
+import type {ITwitchNotificationPayloadEvent} from 'types/twitch/TTwitchMessageData.mjs';
 
 import {Logger} from '../logger/logger.mjs';
 import {FileHelper} from '../file/FileHelper.mjs';
@@ -7,16 +7,16 @@ import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 
 export function writeLastRewardedUser(
     directory: string,
-    rewardRedemption: ITwitchRewardRedemption,
+    rewardRedemption: ITwitchNotificationPayloadEvent,
 ) {
-    const {user, reward} = rewardRedemption;
-    const rewardId = reward.id;
+    const {user_name, reward} = rewardRedemption;
+    const {id: rewardId, title: rewardTitle} = reward;
 
     try {
-        FileHelper.write(directory, `${rewardId}.txt`, user.display_name);
+        FileHelper.write(directory, `${rewardId}.txt`, user_name);
     } catch (err) {
         Logger.error(
-            `Handle: Error while write reward ${reward.title} for ${user.display_name}`,
+            `Handle: Error while write reward ${rewardTitle} for ${user_name}`,
             buildErrorFromUnknown(err),
         );
     }

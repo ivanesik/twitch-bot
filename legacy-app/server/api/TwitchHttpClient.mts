@@ -2,6 +2,7 @@ import type {IGetUsersResponse, ITwitchUserFromResponse} from 'types/twitch/IGet
 import type {ITwitchValidateTokenResponse} from 'types/twitch/ITwitchValidateTokenResponse.js';
 
 import {logAction} from '../logger/logMethod.mjs';
+import type {IEventsubSubscriptionsResponse} from 'types/twitch/IEventsubSubscriptionsResponse';
 
 type IValidateAccessTokenResult =
     | {isValid: true; result: ITwitchValidateTokenResponse}
@@ -42,5 +43,34 @@ export class TwitchHttpClient {
         const result = (await response.json()) as IGetUsersResponse;
 
         return result.data?.[0];
+    }
+
+    @logAction('Getting user by login')
+    async subscribeToEvents(params: {
+        scope: string;
+        sessionId: string;
+        userId: string;
+    }): Promise<IEventsubSubscriptionsResponse> {
+        const {sessionId, userId, scope} = params;
+
+        const response = await fetch(`https://api.twitch.tv/helix/eventsub/subscriptions`, {
+            method: 'POST',
+            headers: {
+                'Client-ID': this.clientId,
+                Authorization: 'Bearer ' + this.accessToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: scope,
+                version: '1',
+                condition: {broadcaster_user_id: userId},
+                transport: {
+                    method: 'websocket',
+                    session_id: sessionId,
+                },
+            }),
+        });
+
+        return (await response.json()) as IEventsubSubscriptionsResponse;
     }
 }

@@ -5,7 +5,7 @@ import type {
     IRewardRating,
 } from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 import type {IRewardFilesInfo} from '../types/rewardsStorage/IRewardFilesInfo.mjs';
-import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
+import type {ITwitchNotificationPayloadEvent} from '../types/twitch/TTwitchMessageData.mjs';
 
 import {FileHelper} from '../file/FileHelper.mjs';
 import {Logger} from '../logger/logger.mjs';
@@ -19,7 +19,7 @@ interface IRewardRatingTemplateData extends IRewardRating {
 export function writeRewardRatingInTemplate(
     ratingJsonDirectory: string,
     templatedDirectory: string,
-    rewardRedemption: ITwitchRewardRedemption,
+    rewardRedemption: ITwitchNotificationPayloadEvent,
     filesInfo: IRewardFilesInfo,
     isReverse: boolean,
 ): void {

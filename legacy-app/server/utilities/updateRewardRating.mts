@@ -1,19 +1,17 @@
-import type {ITwitchUser} from '../types/twitch/ITwitchUser.mjs';
 import type {
     IRewardRating,
     IRewardRatingsInfo,
 } from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 export function updateRewardRating(
-    user: ITwitchUser,
+    userId: string,
+    userName: string,
     currentRating: IRewardRatingsInfo,
     isIncrease: boolean,
 ): IRewardRating {
-    const {id, display_name: displayName} = user;
-
     return {
-        amount: (currentRating[id]?.amount ?? 0) + (isIncrease ? 1 : -1),
-        displayName,
+        amount: (currentRating[userId]?.amount ?? 0) + (isIncrease ? 1 : -1),
+        displayName: userName,
         lastRewardDate: new Date().getTime(),
     };
 }

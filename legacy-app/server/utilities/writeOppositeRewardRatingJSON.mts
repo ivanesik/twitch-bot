@@ -1,5 +1,4 @@
-import type {ITwitchUser} from 'types/twitch/ITwitchUser.mjs';
-import type {ITwitchRewardRedemption} from 'types/twitch/TTwitchMessageData.mjs';
+import type {ITwitchNotificationPayloadEvent} from 'types/twitch/TTwitchMessageData.mjs';
 import type {IRewardRatingsInfo} from 'types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 import type {TOppositeRewardInfo} from '../config/index.mjs';
@@ -16,7 +15,7 @@ export async function writeOppositeRewardRatingJSON(
     fileName: string,
     oppositeReward: TOppositeRewardInfo,
     twitchClient: TwitchHttpClient,
-    rewardRedemption: ITwitchRewardRedemption,
+    rewardRedemption: ITwitchNotificationPayloadEvent,
 ): Promise<void> {
     const {reward} = rewardRedemption;
 
@@ -25,28 +24,37 @@ export async function writeOppositeRewardRatingJSON(
 
         if (oppositeReward && userNameFromInput) {
             const user = await twitchClient.getUserByLogin(userNameFromInput);
-            const fakeUser: ITwitchUser = {
+            const fakeUser = {
                 id: `unknown-${userNameFromInput}`,
-                login: userNameFromInput,
                 display_name: userNameFromInput,
             };
             const rewardRatings: IRewardRatingsInfo =
                 FileHelper.readJsonFile(directory, fileName) || {};
 
             if (user) {
-                rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
+                rewardRatings[user.id] = updateRewardRating(
+                    user.id,
+                    user.display_name,
+                    rewardRatings,
+                    false,
+                );
             } else {
                 Logger.error(
                     `Can't find user with name: ${userNameFromInput}. Write unknown user with id ${fakeUser.id}`,
                 );
-                rewardRatings[fakeUser.id] = updateRewardRating(fakeUser, rewardRatings, false);
+                rewardRatings[fakeUser.id] = updateRewardRating(
+                    fakeUser.id,
+                    fakeUser.display_name,
+                    rewardRatings,
+                    false,
+                );
             }
 
             FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
         }
     } catch (err) {
         Logger.error(
-            `Handle: Error while write opposite reward rating ${reward.title} from ${rewardRedemption.user.display_name} to decrease ${rewardRedemption.user_input}`,
+            `Handle: Error while write opposite reward rating ${reward.title} from ${rewardRedemption.user_name} to decrease ${rewardRedemption.user_input}`,
 
             buildErrorFromUnknown(err),
         );

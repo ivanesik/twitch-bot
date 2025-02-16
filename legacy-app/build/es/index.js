@@ -22249,6 +22249,27 @@ class TwitchHttpClient {
         const result = (await response.json());
         return result.data?.[0];
     }
+    async subscribeToEvents(params) {
+        const { sessionId, userId, scope } = params;
+        const response = await fetch(`https://api.twitch.tv/helix/eventsub/subscriptions`, {
+            method: 'POST',
+            headers: {
+                'Client-ID': this.clientId,
+                Authorization: 'Bearer ' + this.accessToken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                type: scope,
+                version: '1',
+                condition: { broadcaster_user_id: userId },
+                transport: {
+                    method: 'websocket',
+                    session_id: sessionId,
+                },
+            }),
+        });
+        return (await response.json());
+    }
 }
 __decorate([
     logAction('Validate access token'),
@@ -22262,6 +22283,12 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], TwitchHttpClient.prototype, "getUserByLogin", null);
+__decorate([
+    logAction('Getting user by login'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], TwitchHttpClient.prototype, "subscribeToEvents", null);
 
 var bufferUtil$1 = {exports: {}};
 
@@ -26018,23 +26045,18 @@ function socketOnError() {
 var WebSocket$1 = /*@__PURE__*/getDefaultExportFromCjs(websocket);
 
 const SECOND = 1000;
-const MINUTE = 60 * SECOND;
 
-const twitchPubSubTopics = {
-    /** A custom reward is redeemed in a channel.  */
-    channelPoints: (userId) => `channel-points-channel-v1.${userId}`,
-};
-
-/** https://dev.twitch.tv/docs/pubsub/#available-topics */
-const APP_REQUIRED_SCOPES = ['channel:read:redemptions'];
-
-function builtTwitchAccessUrl(clientId) {
-    const url = new URL('https://id.twitch.tv/oauth2/authorize');
-    url.searchParams.set('response_type', 'token');
-    url.searchParams.set('client_id', clientId);
-    url.searchParams.set('redirect_uri', 'http://localhost');
-    url.searchParams.set('scope', APP_REQUIRED_SCOPES.join(' '));
-    return url.toString();
+function isTwitchSessionWelcomeMessage(event) {
+    return event.metadata.message_type === 'session_welcome';
+}
+function isTwitchSessionKeepAliveMessage(event) {
+    return event.metadata.message_type === 'session_keepalive';
+}
+function isTwitchReconnectMessage(event) {
+    return event.metadata.message_type === 'session_reconnect';
+}
+function isTwitchNotificationMessage(event) {
+    return event.metadata.message_type === 'notification';
 }
 
 class FileHelper {
@@ -26072,35 +26094,34 @@ __decorate([
 ], FileHelper, "readJsonFile", null);
 
 function writeLastRewardedUser(directory, rewardRedemption) {
-    const { user, reward } = rewardRedemption;
-    const rewardId = reward.id;
+    const { user_name, reward } = rewardRedemption;
+    const { id: rewardId, title: rewardTitle } = reward;
     try {
-        FileHelper.write(directory, `${rewardId}.txt`, user.display_name);
+        FileHelper.write(directory, `${rewardId}.txt`, user_name);
     }
     catch (err) {
-        Logger.error(`Handle: Error while write reward ${reward.title} for ${user.display_name}`, buildErrorFromUnknown(err));
+        Logger.error(`Handle: Error while write reward ${rewardTitle} for ${user_name}`, buildErrorFromUnknown(err));
     }
 }
 
-function updateRewardRating(user, currentRating, isIncrease) {
-    const { id, display_name: displayName } = user;
+function updateRewardRating(userId, userName, currentRating, isIncrease) {
     return {
-        amount: (currentRating[id]?.amount ?? 0) + (isIncrease ? 1 : -1),
-        displayName,
+        amount: (currentRating[userId]?.amount ?? 0) + (isIncrease ? 1 : -1),
+        displayName: userName,
         lastRewardDate: new Date().getTime(),
     };
 }
 
 function writeRewardRatingJSON(directory, fileName, rewardRedemption) {
-    const { user, reward } = rewardRedemption;
+    const { user_name, reward } = rewardRedemption;
     try {
-        const { user } = rewardRedemption;
+        const { user_id } = rewardRedemption;
         const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
-        rewardRatings[user.id] = updateRewardRating(user, rewardRatings, true);
+        rewardRatings[user_id] = updateRewardRating(rewardRedemption.user_id, rewardRedemption.user_name, rewardRatings, true);
         FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
     }
     catch (err) {
-        Logger.error(`Handle: Error while write reward rating ${reward.title} for ${user.display_name}`, buildErrorFromUnknown(err));
+        Logger.error(`Handle: Error while write reward rating ${reward.title} for ${user_name}`, buildErrorFromUnknown(err));
     }
 }
 
@@ -44416,30 +44437,29 @@ function prepareUserName(userName) {
     return userName.trim().replaceAll('@', '');
 }
 
-async function writeOpositeRewardRatingJSON(directory, fileName, opositeReward, twitchClient, rewardRedemption) {
+async function writeOppositeRewardRatingJSON(directory, fileName, oppositeReward, twitchClient, rewardRedemption) {
     const { reward } = rewardRedemption;
     try {
         const userNameFromInput = prepareUserName(rewardRedemption.user_input);
-        if (opositeReward && userNameFromInput) {
+        if (oppositeReward && userNameFromInput) {
             const user = await twitchClient.getUserByLogin(userNameFromInput);
             const fakeUser = {
                 id: `unknown-${userNameFromInput}`,
-                login: userNameFromInput,
                 display_name: userNameFromInput,
             };
             const rewardRatings = FileHelper.readJsonFile(directory, fileName) || {};
             if (user) {
-                rewardRatings[user.id] = updateRewardRating(user, rewardRatings, false);
+                rewardRatings[user.id] = updateRewardRating(user.id, user.display_name, rewardRatings, false);
             }
             else {
                 Logger.error(`Can't find user with name: ${userNameFromInput}. Write unknown user with id ${fakeUser.id}`);
-                rewardRatings[fakeUser.id] = updateRewardRating(fakeUser, rewardRatings, false);
+                rewardRatings[fakeUser.id] = updateRewardRating(fakeUser.id, fakeUser.display_name, rewardRatings, false);
             }
             FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
         }
     }
     catch (err) {
-        Logger.error(`Handle: Error while write oposite reward rating ${reward.title} from ${rewardRedemption.user.display_name} to decrease ${rewardRedemption.user_input}`, buildErrorFromUnknown(err));
+        Logger.error(`Handle: Error while write opposite reward rating ${reward.title} from ${rewardRedemption.user_name} to decrease ${rewardRedemption.user_input}`, buildErrorFromUnknown(err));
     }
 }
 
@@ -48413,13 +48433,13 @@ const templateInfoSchema = z.object({
     `),
 });
 const templatesInfoSchema = z.record(templateInfoSchema);
-const opositeRewardsSchema = z.object({
+const oppositeRewardsSchema = z.object({
     targetRewardId: z.string(),
-    opositeRewardId: z.string(),
+    oppositeRewardId: z.string(),
 });
 const configSchema = z.object({
     templates: templatesInfoSchema.optional(),
-    opositeRewards: z.array(opositeRewardsSchema).optional(),
+    oppositeRewards: z.array(oppositeRewardsSchema).optional(),
 });
 
 const REWARD_RATINGS_CONFIG = FileHelper.readJsonFile(process.cwd(), 'config.json');
@@ -48443,32 +48463,29 @@ function logHandler(eventName) {
     };
 }
 
-const TWITCH_PUBSUB_URL = 'wss://pubsub-edge.twitch.tv';
-const PING_MESSAGE = JSON.stringify({
-    type: 'PING',
-});
+const twitchEventSubTopics = {
+    /** A custom reward is redeemed in a channel.  */
+    channelRewardRedemption: 'channel.channel_points_custom_reward_redemption.add',
+};
+
 const REWARD_USERS_DIRECTORY = 'rewardUsers';
 const REWARD_RATINGS_DIRECTORY = 'rewardRatings';
 const TEMPLATED_RATINGS_DIRECTORY = 'templatedRewardRatings';
 const TEMPLATED_ANTI_RATINGS_DIRECTORY = 'templatedAntiRewardRatings';
 class TwitchSocketClient {
     userId;
-    accessToken;
-    clientId;
+    connectUrl = 'wss://eventsub.wss.twitch.tv/ws';
     twitchClient;
     websocket;
-    heartbeatTimer;
-    pingTimeountTimer;
+    keepAliveTimer;
+    keepAliveTimeoutSeconds = 10;
     constructor(userId, accessToken, clientId) {
         this.userId = userId;
-        this.accessToken = accessToken;
-        this.clientId = clientId;
         this.start();
         this.twitchClient = new TwitchHttpClient(clientId, accessToken);
     }
     start() {
-        this.websocket = new WebSocket$1(TWITCH_PUBSUB_URL);
-        this.websocket.onopen = this.onOpen.bind(this);
+        this.websocket = new WebSocket$1(this.connectUrl);
         this.websocket.onclose = this.onClose.bind(this);
         this.websocket.onerror = this.onError.bind(this);
         this.websocket.onmessage = this.onMessage.bind(this);
@@ -48478,31 +48495,14 @@ class TwitchSocketClient {
         this.websocket?.close();
     }
     cleanup() {
-        clearInterval(this.heartbeatTimer);
-        clearTimeout(this.pingTimeountTimer);
+        clearInterval(this.keepAliveTimer);
     }
-    subscribe(subscriptionName) {
-        const subscriptionData = JSON.stringify({
-            type: 'LISTEN',
-            data: {
-                topics: [subscriptionName],
-                auth_token: this.accessToken,
-            },
+    async subscribe(sessionId) {
+        await this.twitchClient.subscribeToEvents({
+            scope: twitchEventSubTopics.channelRewardRedemption,
+            userId: this.userId,
+            sessionId,
         });
-        this.websocket?.send(subscriptionData);
-    }
-    sendPing() {
-        this.websocket?.send(PING_MESSAGE);
-        this.pingTimeountTimer = setTimeout(() => {
-            this.stop();
-        }, 10 * SECOND);
-    }
-    onOpen() {
-        this.sendPing();
-        this.heartbeatTimer = setInterval(() => {
-            this.sendPing();
-        }, 1 * MINUTE);
-        this.subscribe(twitchPubSubTopics.channelPoints(this.userId));
     }
     onError(error) {
         Logger.error('Socket errored with data:', error);
@@ -48521,85 +48521,195 @@ class TwitchSocketClient {
             Logger.error('No data in message');
             return;
         }
-        Logger.info(`Handle: Received message type - "${data.type}"`);
-        if (data.error) {
-            switch (data.error) {
-                case 'ERR_BADAUTH': {
-                    const errorMessage = `The user (${this.userId}) has not granted access.\n` +
-                        `Please ask user to give token to you from: ${builtTwitchAccessUrl(this.clientId)}`;
-                    Logger.error(errorMessage);
-                    break;
-                }
-                default: {
-                    Logger.error(`Unknown error: ${data.error}`);
-                }
-            }
-            return;
+        Logger.info(`Handle: Received message type - "${data.metadata.message_type}"`);
+        // if (data.error) {
+        //     switch (data.error) {
+        //         case 'ERR_BADAUTH': {
+        //             const errorMessage =
+        //                 `The user (${this.userId}) has not granted access.\n` +
+        //                 `Please ask user to give token to you from: ${builtTwitchAccessUrl(
+        //                     this.clientId,
+        //                 )}`;
+        //             Logger.error(errorMessage);
+        //             break;
+        //         }
+        //         default: {
+        //             Logger.error(`Unknown error: ${data.error}`);
+        //         }
+        //     }
+        //     return;
+        // }
+        if (isTwitchSessionWelcomeMessage(data)) {
+            await this.subscribe(data.payload.session.id);
+            this.keepAliveTimeoutSeconds = data.payload.session.keepalive_timeout_seconds;
         }
-        switch (data.type) {
+        else if (isTwitchSessionKeepAliveMessage(data)) {
+            const timeoutMs = (this.keepAliveTimeoutSeconds + 1) * SECOND;
+            clearTimeout(this.keepAliveTimer);
+            this.keepAliveTimer = setTimeout(() => {
+                Logger.error('Twitch socket: keep alive timeout');
+                this.stop();
+            }, timeoutMs);
+        }
+        else if (isTwitchReconnectMessage(data)) {
+            this.connectUrl = data.payload.session.reconnect_url;
+            if (data.payload.session.keepalive_timeout_seconds) {
+                this.keepAliveTimeoutSeconds = data.payload.session.keepalive_timeout_seconds;
+            }
+            this.stop();
+        }
+        else if (isTwitchNotificationMessage(data) &&
+            data.payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add') {
+            const rewardRedemption = data.payload.event;
+            const reward = data.payload.event.reward;
+            const oppositeReward = config.oppositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
+            const rewardTemplates = config.templates?.[reward.id];
+            const oppositeRewardTemplates = oppositeReward
+                ? config.templates?.[oppositeReward.oppositeRewardId]
+                : undefined;
+            const rewardFilesInfo = {
+                rewardRatingFileName: `${reward.id}.json`,
+                templateRewardRatingFileName: `${reward.id}.txt`,
+                template: rewardTemplates?.normal,
+            };
+            const antiRewardFilesInfo = {
+                rewardRatingFileName: `${reward.id}.json`,
+                templateRewardRatingFileName: `${reward.id}.txt`,
+                template: rewardTemplates?.reverse,
+            };
+            const oppositeRewardFilesInfo = oppositeReward?.oppositeRewardId
+                ? {
+                    rewardRatingFileName: `${oppositeReward?.oppositeRewardId}.json`,
+                    templateRewardRatingFileName: `${oppositeReward?.oppositeRewardId}.txt`,
+                    template: oppositeRewardTemplates?.normal,
+                }
+                : undefined;
+            const oppositeAntiRewardFilesInfo = oppositeReward?.oppositeRewardId
+                ? {
+                    rewardRatingFileName: `${oppositeReward?.oppositeRewardId}.json`,
+                    templateRewardRatingFileName: `${oppositeReward?.oppositeRewardId}.txt`,
+                    template: oppositeRewardTemplates?.reverse,
+                }
+                : undefined;
+            Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user_name}`);
+            writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
+            writeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, rewardRedemption);
+            if (oppositeRewardFilesInfo && oppositeReward) {
+                await writeOppositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, oppositeRewardFilesInfo.rewardRatingFileName, oppositeReward, this.twitchClient, rewardRedemption);
+            }
+            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_RATINGS_DIRECTORY, rewardRedemption, rewardFilesInfo, false);
+            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_ANTI_RATINGS_DIRECTORY, rewardRedemption, antiRewardFilesInfo, true);
+            if (oppositeRewardFilesInfo) {
+                writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_RATINGS_DIRECTORY, rewardRedemption, oppositeRewardFilesInfo, false);
+            }
+            if (oppositeAntiRewardFilesInfo) {
+                writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_ANTI_RATINGS_DIRECTORY, rewardRedemption, oppositeAntiRewardFilesInfo, true);
+            }
+        }
+        else {
+            Logger.error(`Unhandled message type: ${data.metadata.message_type}`);
+        }
+        switch (data.metadata.message_type) {
             case 'RECONNECT': {
                 this.stop();
                 break;
             }
-            case 'PONG': {
-                clearTimeout(this.pingTimeountTimer);
-                break;
-            }
-            case 'MESSAGE': {
-                const rewardData = data.data?.message && JSON.parse(data.data.message);
-                if (!rewardData) {
-                    return;
-                }
-                switch (rewardData.type) {
-                    case 'reward-redeemed': {
-                        const rewardRedemption = rewardData.data.redemption;
-                        const reward = rewardRedemption.reward;
-                        const opositeReward = config.opositeRewards?.find(({ targetRewardId }) => targetRewardId === reward.id);
-                        const rewardTemplates = config.templates?.[reward.id];
-                        const opositeRewardTemplates = opositeReward
-                            ? config.templates?.[opositeReward.opositeRewardId]
-                            : undefined;
-                        const rewardFilesInfo = {
-                            rewardRatingFileName: `${reward.id}.json`,
-                            templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: rewardTemplates?.normal,
-                        };
-                        const antiRewardFilesInfo = {
-                            rewardRatingFileName: `${reward.id}.json`,
-                            templateRewardRatingFileName: `${reward.id}.txt`,
-                            template: rewardTemplates?.reverse,
-                        };
-                        const opositeRewardFilesInfo = opositeReward?.opositeRewardId
-                            ? {
-                                rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
-                                templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                template: opositeRewardTemplates?.normal,
-                            }
-                            : undefined;
-                        const opositeAntiRewardFilesInfo = opositeReward?.opositeRewardId
-                            ? {
-                                rewardRatingFileName: `${opositeReward?.opositeRewardId}.json`,
-                                templateRewardRatingFileName: `${opositeReward?.opositeRewardId}.txt`,
-                                template: opositeRewardTemplates?.reverse,
-                            }
-                            : undefined;
-                        Logger.info(`Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`);
-                        writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
-                        writeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, rewardFilesInfo.rewardRatingFileName, rewardRedemption);
-                        if (opositeRewardFilesInfo && opositeReward) {
-                            await writeOpositeRewardRatingJSON(REWARD_RATINGS_DIRECTORY, opositeRewardFilesInfo.rewardRatingFileName, opositeReward, this.twitchClient, rewardRedemption);
-                        }
-                        writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_RATINGS_DIRECTORY, rewardRedemption, rewardFilesInfo, false);
-                        writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_ANTI_RATINGS_DIRECTORY, rewardRedemption, antiRewardFilesInfo, true);
-                        if (opositeRewardFilesInfo) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_RATINGS_DIRECTORY, rewardRedemption, opositeRewardFilesInfo, false);
-                        }
-                        if (opositeAntiRewardFilesInfo) {
-                            writeRewardRatingInTemplate(REWARD_RATINGS_DIRECTORY, TEMPLATED_ANTI_RATINGS_DIRECTORY, rewardRedemption, opositeAntiRewardFilesInfo, true);
-                        }
-                    }
-                }
-            }
+            // case 'MESSAGE': {
+            //     const rewardData: undefined | IRewardData =
+            //         data.data?.message && JSON.parse(data.data.message);
+            //     if (!rewardData) {
+            //         return;
+            //     }
+            //     switch (rewardData.type) {
+            //         case 'reward-redeemed': {
+            //             const rewardRedemption = rewardData.data.redemption;
+            //             const reward = rewardRedemption.reward;
+            //             const oppositeReward = config.oppositeRewards?.find(
+            //                 ({targetRewardId}) => targetRewardId === reward.id,
+            //             );
+            //             const rewardTemplates = config.templates?.[reward.id];
+            //             const oppositeRewardTemplates = oppositeReward
+            //                 ? config.templates?.[oppositeReward.oppositeRewardId]
+            //                 : undefined;
+            //             const rewardFilesInfo: IRewardFilesInfo = {
+            //                 rewardRatingFileName: `${reward.id}.json`,
+            //                 templateRewardRatingFileName: `${reward.id}.txt`,
+            //                 template: rewardTemplates?.normal,
+            //             };
+            //             const antiRewardFilesInfo: IRewardFilesInfo = {
+            //                 rewardRatingFileName: `${reward.id}.json`,
+            //                 templateRewardRatingFileName: `${reward.id}.txt`,
+            //                 template: rewardTemplates?.reverse,
+            //             };
+            //             const oppositeRewardFilesInfo: IRewardFilesInfo | undefined =
+            //                 oppositeReward?.oppositeRewardId
+            //                     ? {
+            //                           rewardRatingFileName: `${oppositeReward?.oppositeRewardId}.json`,
+            //                           templateRewardRatingFileName: `${oppositeReward?.oppositeRewardId}.txt`,
+            //                           template: oppositeRewardTemplates?.normal,
+            //                       }
+            //                     : undefined;
+            //             const oppositeAntiRewardFilesInfo: IRewardFilesInfo | undefined =
+            //                 oppositeReward?.oppositeRewardId
+            //                     ? {
+            //                           rewardRatingFileName: `${oppositeReward?.oppositeRewardId}.json`,
+            //                           templateRewardRatingFileName: `${oppositeReward?.oppositeRewardId}.txt`,
+            //                           template: oppositeRewardTemplates?.reverse,
+            //                       }
+            //                     : undefined;
+            //             Logger.info(
+            //                 `Handle: receive reward "${reward.title}" from ${rewardRedemption.user.display_name}`,
+            //             );
+            //             writeLastRewardedUser(REWARD_USERS_DIRECTORY, rewardRedemption);
+            //             writeRewardRatingJSON(
+            //                 REWARD_RATINGS_DIRECTORY,
+            //                 rewardFilesInfo.rewardRatingFileName,
+            //                 rewardRedemption,
+            //             );
+            //             if (oppositeRewardFilesInfo && oppositeReward) {
+            //                 await writeOppositeRewardRatingJSON(
+            //                     REWARD_RATINGS_DIRECTORY,
+            //                     oppositeRewardFilesInfo.rewardRatingFileName,
+            //                     oppositeReward,
+            //                     this.twitchClient,
+            //                     rewardRedemption,
+            //                 );
+            //             }
+            //             writeRewardRatingInTemplate(
+            //                 REWARD_RATINGS_DIRECTORY,
+            //                 TEMPLATED_RATINGS_DIRECTORY,
+            //                 rewardRedemption,
+            //                 rewardFilesInfo,
+            //                 false,
+            //             );
+            //             writeRewardRatingInTemplate(
+            //                 REWARD_RATINGS_DIRECTORY,
+            //                 TEMPLATED_ANTI_RATINGS_DIRECTORY,
+            //                 rewardRedemption,
+            //                 antiRewardFilesInfo,
+            //                 true,
+            //             );
+            //             if (oppositeRewardFilesInfo) {
+            //                 writeRewardRatingInTemplate(
+            //                     REWARD_RATINGS_DIRECTORY,
+            //                     TEMPLATED_RATINGS_DIRECTORY,
+            //                     rewardRedemption,
+            //                     oppositeRewardFilesInfo,
+            //                     false,
+            //                 );
+            //             }
+            //             if (oppositeAntiRewardFilesInfo) {
+            //                 writeRewardRatingInTemplate(
+            //                     REWARD_RATINGS_DIRECTORY,
+            //                     TEMPLATED_ANTI_RATINGS_DIRECTORY,
+            //                     rewardRedemption,
+            //                     oppositeAntiRewardFilesInfo,
+            //                     true,
+            //                 );
+            //             }
+            //         }
+            //     }
+            // }
         }
     }
 }
@@ -48625,20 +48735,8 @@ __decorate([
     logAction('Subscribe', { onlyStart: true, withArgs: true }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], TwitchSocketClient.prototype, "subscribe", null);
-__decorate([
-    logAction('Send "PING"'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], TwitchSocketClient.prototype, "sendPing", null);
-__decorate([
-    logHandler('Socket open'),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", void 0)
-], TwitchSocketClient.prototype, "onOpen", null);
 __decorate([
     logHandler('Socket error'),
     __metadata("design:type", Function),
@@ -48657,6 +48755,18 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], TwitchSocketClient.prototype, "onMessage", null);
+
+/** https://dev.twitch.tv/docs/pubsub/#available-topics */
+const APP_REQUIRED_SCOPES = ['channel:read:redemptions'];
+
+function builtTwitchAccessUrl(clientId) {
+    const url = new URL('https://id.twitch.tv/oauth2/authorize');
+    url.searchParams.set('response_type', 'token');
+    url.searchParams.set('client_id', clientId);
+    url.searchParams.set('redirect_uri', 'http://localhost');
+    url.searchParams.set('scope', APP_REQUIRED_SCOPES.join(' '));
+    return url.toString();
+}
 
 dotenv.config(process.env.ENV_FILE ? { path: process.env.ENV_FILE } : undefined);
 const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -48689,6 +48799,7 @@ async function start(clientId, clientAccessToken) {
     }
     else {
         Logger.error("Access token isn't valid");
+        Logger.error(`Go to ${builtTwitchAccessUrl(clientId)} for app access`);
         rl.question('Press Enter to exit', () => {
             rl.close();
         });

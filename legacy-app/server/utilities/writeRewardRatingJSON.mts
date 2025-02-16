@@ -1,4 +1,4 @@
-import type {ITwitchRewardRedemption} from '../types/twitch/TTwitchMessageData.mjs';
+import type {ITwitchNotificationPayloadEvent} from '../types/twitch/TTwitchMessageData.mjs';
 import type {IRewardRatingsInfo} from '../types/rewardsStorage/IRewardRatingsInfo.mjs';
 
 import {Logger} from '../logger/logger.mjs';
@@ -10,21 +10,26 @@ import {buildErrorFromUnknown} from './buildErrorFromUnknown.mjs';
 export function writeRewardRatingJSON(
     directory: string,
     fileName: string,
-    rewardRedemption: ITwitchRewardRedemption,
+    rewardRedemption: ITwitchNotificationPayloadEvent,
 ): void {
-    const {user, reward} = rewardRedemption;
+    const {user_name, reward} = rewardRedemption;
 
     try {
-        const {user} = rewardRedemption;
+        const {user_id} = rewardRedemption;
         const rewardRatings: IRewardRatingsInfo =
             FileHelper.readJsonFile(directory, fileName) || {};
 
-        rewardRatings[user.id] = updateRewardRating(user, rewardRatings, true);
+        rewardRatings[user_id] = updateRewardRating(
+            rewardRedemption.user_id,
+            rewardRedemption.user_name,
+            rewardRatings,
+            true,
+        );
 
         FileHelper.write(directory, fileName, JSON.stringify(rewardRatings, null, 2));
     } catch (err) {
         Logger.error(
-            `Handle: Error while write reward rating ${reward.title} for ${user.display_name}`,
+            `Handle: Error while write reward rating ${reward.title} for ${user_name}`,
             buildErrorFromUnknown(err),
         );
     }
