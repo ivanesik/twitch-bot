@@ -90,6 +90,17 @@ export class TwitchSocketClient {
         this.start();
     }
 
+    @logAction('Restart KeepAlive Timer')
+    restartKeepAliveTimer(): void {
+        clearTimeout(this.keepAliveTimer);
+
+        const timeoutMs = (this.keepAliveTimeoutSeconds + 1) * SECOND;
+        this.keepAliveTimer = setTimeout(() => {
+            Logger.error('Twitch socket: keep alive timeout');
+            this.stop();
+        }, timeoutMs);
+    }
+
     @logHandler('Socket receive message')
     private async onMessage(event: MessageEvent): Promise<void> {
         const data =
@@ -104,36 +115,11 @@ export class TwitchSocketClient {
 
         Logger.info(`Handle: Received message type - "${data.metadata.message_type}"`);
 
-        // if (data.error) {
-        //     switch (data.error) {
-        //         case 'ERR_BADAUTH': {
-        //             const errorMessage =
-        //                 `The user (${this.userId}) has not granted access.\n` +
-        //                 `Please ask user to give token to you from: ${builtTwitchAccessUrl(
-        //                     this.clientId,
-        //                 )}`;
-        //             Logger.error(errorMessage);
-        //             break;
-        //         }
-        //         default: {
-        //             Logger.error(`Unknown error: ${data.error}`);
-        //         }
-        //     }
-
-        //     return;
-        // }
-
         if (isTwitchSessionWelcomeMessage(data)) {
             await this.subscribe(data.payload.session.id);
             this.keepAliveTimeoutSeconds = data.payload.session.keepalive_timeout_seconds;
         } else if (isTwitchSessionKeepAliveMessage(data)) {
-            const timeoutMs = (this.keepAliveTimeoutSeconds + 1) * SECOND;
-
-            clearTimeout(this.keepAliveTimer);
-            this.keepAliveTimer = setTimeout(() => {
-                Logger.error('Twitch socket: keep alive timeout');
-                this.stop();
-            }, timeoutMs);
+            this.restartKeepAliveTimer();
         } else if (isTwitchReconnectMessage(data)) {
             this.connectUrl = data.payload.session.reconnect_url;
 
@@ -146,6 +132,8 @@ export class TwitchSocketClient {
             isTwitchNotificationMessage(data) &&
             data.payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add'
         ) {
+            this.restartKeepAliveTimer();
+
             const rewardRedemption = data.payload.event;
             const reward = data.payload.event.reward;
             const oppositeReward = config.oppositeRewards?.find(
